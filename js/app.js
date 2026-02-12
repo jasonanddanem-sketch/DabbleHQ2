@@ -134,7 +134,10 @@ var state = {
     groupPosts: {},
     privateFollowers: false,
     dislikedPosts: {},
-    photos:{profile:[],cover:[],post:[],albums:[]}
+    photos:{profile:[],cover:[],post:[],albums:[]},
+    postCoinCount: 0,
+    commentCoinPosts: {},
+    replyCoinPosts: {}
 };
 // Pre-follow 15 users and pre-join groups (persists as hardcoded init)
 (function(){for(var i=1;i<=15;i++){state.followedUsers[i]=true;}state.following=15;state.joinedGroups[13]=true;state.joinedGroups[1]=true;state.joinedGroups[3]=true;})();
@@ -523,10 +526,13 @@ function navigateTo(page){
     $$('.nav-link').forEach(function(l){l.classList.remove('active');});
     $$('.nav-link[data-page="'+page+'"]').forEach(function(l){l.classList.add('active');});
     $('#userDropdownMenu').classList.remove('show');
+    $$('.post-dropdown.show').forEach(function(m){m.classList.remove('show');});
+    closeModal();
     window.scrollTo(0,0);
     if(page==='notifications'){
         state.notifications.forEach(function(n){n.read=true;});
         updateNotifBadge();
+        renderNotifications();
     }
     if(page==='shop') renderShop();
     if(page==='skins') renderMySkins();
@@ -673,7 +679,8 @@ function updateCoins(){
     el.classList.add('coin-pop');
 }
 $('#navCoins').addEventListener('click',function(){
-    showModal('<div class="modal-header"><h3>Earn Coins</h3><button class="modal-close"><i class="fas fa-times"></i></button></div><div class="modal-body"><p style="text-align:center;margin-bottom:16px;font-size:14px;color:var(--gray);">Interact to earn coins. Spend them in the Skin Shop!</p><div class="coin-rules" style="flex-direction:column;align-items:center;gap:10px;display:flex;"><div class="coin-rule"><i class="fas fa-thumbs-up"></i><span>Like a post <strong>+1</strong></span></div><div class="coin-rule"><i class="fas fa-comment"></i><span>Comment <strong>+2</strong></span></div><div class="coin-rule"><i class="fas fa-pen-to-square"></i><span>Create a post <strong>+5</strong></span></div></div><p style="text-align:center;margin-top:16px;font-size:20px;font-weight:700;color:var(--primary);">'+state.coins+' Coins</p></div>');
+    $('#userDropdownMenu').classList.remove('show');
+    navigateTo('shop');
 });
 
 // ======================== FOLLOW SYSTEM ========================
@@ -725,6 +732,16 @@ function toggleFollow(userId,btn){
 }
 
 // ======================== NOTIFICATIONS ========================
+var activeNotifTab='all';
+var notifTabDefs=[
+    {key:'all',label:'<i class="fas fa-bell"></i> All',filter:null},
+    {key:'comment',label:'<i class="fas fa-comment"></i> Comments',filter:function(n){return n.type==='comment';}},
+    {key:'reply',label:'<i class="fas fa-reply"></i> Replies',filter:function(n){return n.type==='reply';}},
+    {key:'like',label:'<i class="fas fa-heart"></i> Likes',filter:function(n){return n.type==='like';}},
+    {key:'follow',label:'<i class="fas fa-user-plus"></i> Follows',filter:function(n){return n.type==='follow';}},
+    {key:'message',label:'<i class="fas fa-envelope"></i> Messages',filter:function(n){return n.type==='message';}},
+    {key:'system',label:'<i class="fas fa-cog"></i> System',filter:function(n){return n.type==='system'||n.type==='skin'||n.type==='group'||n.type==='coin';}}
+];
 function addNotification(type,text){
     state.notifications.unshift({type:type,text:text,time:new Date().toLocaleTimeString(),read:false});
     updateNotifBadge();
@@ -736,17 +753,41 @@ function updateNotifBadge(){
     if(unread>0){badge.style.display='flex';badge.textContent=unread;}
     else{badge.style.display='none';}
 }
+function getNotifIcon(type){
+    var map={comment:{cls:'skin',icon:'fa-comment'},reply:{cls:'skin',icon:'fa-reply'},like:{cls:'coin',icon:'fa-heart'},follow:{cls:'follow',icon:'fa-user-plus'},message:{cls:'group',icon:'fa-envelope'},system:{cls:'coin',icon:'fa-cog'},skin:{cls:'skin',icon:'fa-palette'},group:{cls:'group',icon:'fa-users'},coin:{cls:'coin',icon:'fa-coins'}};
+    return map[type]||{cls:'coin',icon:'fa-bell'};
+}
 function renderNotifications(){
+    // Render tabs
+    var tabsContainer=$('#notifTabs');
+    if(tabsContainer){
+        var tabsHtml='';
+        notifTabDefs.forEach(function(t){
+            var count=t.filter?state.notifications.filter(t.filter).length:state.notifications.length;
+            tabsHtml+='<button class="search-tab'+(t.key===activeNotifTab?' active':'')+'" data-ntab="'+t.key+'">'+t.label+(count>0?' <span class="tab-count">'+count+'</span>':'')+'</button>';
+        });
+        tabsContainer.innerHTML=tabsHtml;
+        $$('#notifTabs .search-tab').forEach(function(tab){
+            tab.addEventListener('click',function(){
+                activeNotifTab=tab.dataset.ntab;
+                $$('#notifTabs .search-tab').forEach(function(t){t.classList.remove('active');});
+                tab.classList.add('active');
+                renderNotifications();
+            });
+        });
+    }
+    // Render filtered list
     var container=$('#notifList');
-    if(state.notifications.length===0){
-        container.innerHTML='<div class="empty-state"><i class="fas fa-bell-slash"></i><p>No notifications yet.</p></div>';
+    var activeTab=notifTabDefs.find(function(t){return t.key===activeNotifTab;});
+    var filtered=activeTab&&activeTab.filter?state.notifications.filter(activeTab.filter):state.notifications;
+    if(filtered.length===0){
+        container.innerHTML='<div class="empty-state"><i class="fas fa-bell-slash"></i><p>No notifications in this category.</p></div>';
         return;
     }
     var html='';
-    state.notifications.forEach(function(n){
-        var iconCls=n.type==='skin'?'skin':n.type==='follow'?'follow':n.type==='group'?'group':'coin';
-        var iconI=n.type==='skin'?'fa-palette':n.type==='follow'?'fa-user-plus':n.type==='group'?'fa-users':'fa-coins';
-        html+='<div class="notif-item"><div class="notif-icon '+iconCls+'"><i class="fas '+iconI+'"></i></div><div class="notif-text"><p>'+n.text+'</p><span>'+n.time+'</span></div></div>';
+    filtered.forEach(function(n){
+        var ic=getNotifIcon(n.type);
+        html+='<div class="notif-item"><div class="notif-icon '+ic.cls+'"><i class="fas '+ic.icon+'"></i></div><div class="notif-text"><p>'+n.text+'</p><span>'+n.time+'</span></div></div>';
     });
     container.innerHTML=html;
 }
@@ -800,7 +841,7 @@ function handleShare(btn){
         ph+='<button class="action-btn comment-btn"><i class="far '+activeIcons.comment+'"></i><span>0</span></button>';
         ph+='<button class="action-btn share-btn"><i class="fas '+activeIcons.share+'"></i><span>0</span></button></div></div></div>';
         container.insertAdjacentHTML('afterbegin',ph);
-        state.coins+=5;updateCoins();
+        if(state.postCoinCount<10){state.coins+=5;state.postCoinCount++;updateCoins();}
         closeModal();
         var countEl=btn.querySelector('span');if(countEl)countEl.textContent=parseInt(countEl.textContent)+1;
         var np=container.firstElementChild;
@@ -917,13 +958,14 @@ function showComments(postId,countEl,sortMode){
             if(!commentReplies[replyTarget])commentReplies[replyTarget]=[];
             var rid=replyTarget+'-r-'+commentReplies[replyTarget].length;
             commentReplies[replyTarget].push({cid:rid,name:'John Doe',img:null,text:text});
-            state.coins+=2;updateCoins();
+            if(!state.replyCoinPosts[postId]){state.replyCoinPosts[postId]=true;state.coins+=2;updateCoins();}
             replyTarget=null;
             document.getElementById('replyIndicator').style.display='none';
             input.placeholder='Write a comment...';
         }else{
             if(!state.comments[postId])state.comments[postId]=[];
-            state.comments[postId].push(text);state.coins+=2;updateCoins();
+            state.comments[postId].push(text);
+            if(!state.commentCoinPosts[postId]){state.commentCoinPosts[postId]=true;state.coins+=2;updateCoins();}
         }
         input.value='';if(countEl)countEl.textContent=parseInt(countEl.textContent)+1;
         renderInlineComments(postId);
@@ -1734,24 +1776,79 @@ function openGroupPostModal(group){
         var mediaHtml='';
         if(mediaList.length>0){var cnt=Math.min(mediaList.length,5);mediaHtml='<div class="post-media-grid pm-count-'+cnt+'">';mediaList.slice(0,5).forEach(function(m){mediaHtml+='<div class="pm-thumb">'+(m.type==='video'?'<video src="'+m.src+'" controls></video>':'<img src="'+m.src+'">')+'</div>';});mediaHtml+='</div>';}
         state.groupPosts[group.id].unshift({name:'John Doe',avatar:$('#profileAvatarImg').src,text:text,media:mediaHtml,time:'just now'});
-        state.coins+=5;updateCoins();closeModal();showGroupView(group);
+        if(state.postCoinCount<10){state.coins+=5;state.postCoinCount++;updateCoins();}closeModal();showGroupView(group);
     });
 }
 
-// Cover photo upload
+// Cover photo upload with crop
 $('#coverEditBtn').addEventListener('click',function(e){e.stopPropagation();$('#coverFileInput').click();});
 $('#coverFileInput').addEventListener('change',function(){
     var file=this.files[0];
     if(!file) return;
     var reader=new FileReader();
-    reader.onload=function(e){
-        state.coverPhoto=e.target.result;
-        state.photos.cover.unshift({src:e.target.result,date:Date.now()});
-        renderPhotosCard();
-        applyCoverPhoto();
-    };
+    reader.onload=function(e){showCoverCropModal(e.target.result);};
     reader.readAsDataURL(file);
 });
+function showCoverCropModal(src){
+    var html='<div class="modal-header"><h3>Crop Cover Photo</h3><button class="modal-close"><i class="fas fa-times"></i></button></div>';
+    html+='<div class="modal-body" style="text-align:center;"><p style="font-size:13px;color:var(--gray);margin-bottom:12px;">Drag to position. Resize the selection area.</p><div class="crop-container" id="coverCropContainer" style="position:relative;display:inline-block;max-width:100%;overflow:hidden;"><img src="'+src+'" id="coverCropImg" style="max-width:100%;display:block;"><div id="coverCropBox" style="position:absolute;border:2px solid #fff;box-shadow:0 0 0 9999px rgba(0,0,0,.5);cursor:move;"><div id="coverCropResize" style="position:absolute;bottom:-4px;right:-4px;width:12px;height:12px;background:#fff;border:1px solid #333;cursor:nwse-resize;"></div></div></div>';
+    html+='<div style="margin-top:16px;"><button class="btn btn-primary" id="coverCropConfirmBtn">Apply</button></div></div>';
+    showModal(html);
+
+    var img=document.getElementById('coverCropImg');
+    var box=document.getElementById('coverCropBox');
+    var resizeHandle=document.getElementById('coverCropResize');
+    var aspectRatio=1280/350; // ~3.66:1 matching cover dimensions
+
+    img.onload=function(){
+        var w=Math.min(img.clientWidth,img.clientWidth*0.9);
+        var h=Math.round(w/aspectRatio);
+        if(h>img.clientHeight*0.9){h=Math.round(img.clientHeight*0.9);w=Math.round(h*aspectRatio);}
+        box.style.width=w+'px';box.style.height=h+'px';
+        box.style.left=((img.clientWidth-w)/2)+'px';box.style.top=((img.clientHeight-h)/2)+'px';
+    };
+
+    var dragging=false,resizing=false,startX,startY,startL,startT,startW,startH;
+    box.addEventListener('mousedown',function(e){
+        if(e.target===resizeHandle) return;
+        dragging=true;startX=e.clientX;startY=e.clientY;startL=box.offsetLeft;startT=box.offsetTop;e.preventDefault();
+    });
+    resizeHandle.addEventListener('mousedown',function(e){
+        resizing=true;startX=e.clientX;startY=e.clientY;startW=box.offsetWidth;startH=box.offsetHeight;e.preventDefault();e.stopPropagation();
+    });
+    document.addEventListener('mousemove',function onCoverMove(e){
+        if(dragging){
+            var dx=e.clientX-startX,dy=e.clientY-startY;
+            var nl=Math.max(0,Math.min(startL+dx,img.clientWidth-box.offsetWidth));
+            var nt=Math.max(0,Math.min(startT+dy,img.clientHeight-box.offsetHeight));
+            box.style.left=nl+'px';box.style.top=nt+'px';
+        }
+        if(resizing){
+            var dw=e.clientX-startX;
+            var nw=Math.max(100,Math.min(startW+dw,img.clientWidth-box.offsetLeft));
+            var nh=Math.round(nw/aspectRatio);
+            if(nh>img.clientHeight-box.offsetTop){nh=img.clientHeight-box.offsetTop;nw=Math.round(nh*aspectRatio);}
+            box.style.width=nw+'px';box.style.height=nh+'px';
+        }
+    });
+    document.addEventListener('mouseup',function(){dragging=false;resizing=false;});
+
+    document.getElementById('coverCropConfirmBtn').addEventListener('click',function(){
+        var canvas=document.createElement('canvas');
+        var scaleX=img.naturalWidth/img.clientWidth;
+        var scaleY=img.naturalHeight/img.clientHeight;
+        var sx=box.offsetLeft*scaleX,sy=box.offsetTop*scaleY,sw=box.offsetWidth*scaleX,sh=box.offsetHeight*scaleY;
+        canvas.width=1280;canvas.height=350;
+        var ctx=canvas.getContext('2d');
+        ctx.drawImage(img,sx,sy,sw,sh,0,0,1280,350);
+        var url=canvas.toDataURL('image/jpeg',0.9);
+        state.coverPhoto=url;
+        state.photos.cover.unshift({src:url,date:Date.now()});
+        renderPhotosCard();
+        applyCoverPhoto();
+        closeModal();
+    });
+}
 function applyCoverPhoto(){
     if(state.coverPhoto){$('#timelineCover').style.backgroundImage='url('+state.coverPhoto+')';}
 }
@@ -1817,13 +1914,52 @@ $('#followersStat').addEventListener('click',function(){
     showFollowListModal('Followers',list,false);
 });
 
-// Avatar photo upload with crop
-$('#avatarEditBtn').addEventListener('click',function(e){e.stopPropagation();$('#avatarFileInput').click();});
+// Avatar photo upload with selection modal
+$('#avatarEditBtn').addEventListener('click',function(e){
+    e.stopPropagation();
+    var photos=state.photos.profile;
+    var html='<div class="modal-header"><h3>Change Profile Picture</h3><button class="modal-close"><i class="fas fa-times"></i></button></div><div class="modal-body">';
+    html+='<div style="text-align:center;margin-bottom:16px;"><button class="btn btn-primary" id="avatarUploadNewBtn"><i class="fas fa-upload"></i> Upload New Photo</button></div>';
+    if(photos.length>0){
+        html+='<p style="font-size:13px;color:var(--gray);margin-bottom:12px;text-align:center;">Or select from previous uploads:</p>';
+        html+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:10px;max-height:300px;overflow-y:auto;">';
+        photos.forEach(function(p,i){
+            html+='<img src="'+p.src+'" class="avatar-pick-thumb" data-idx="'+i+'" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;cursor:pointer;border:3px solid transparent;transition:border-color .2s;">';
+        });
+        html+='</div>';
+    }
+    html+='</div>';
+    showModal(html);
+    document.getElementById('avatarUploadNewBtn').addEventListener('click',function(){closeModal();$('#avatarFileInput').click();});
+    $$('.avatar-pick-thumb').forEach(function(thumb){
+        thumb.addEventListener('mouseenter',function(){thumb.style.borderColor='var(--primary)';});
+        thumb.addEventListener('mouseleave',function(){thumb.style.borderColor='transparent';});
+        thumb.addEventListener('click',function(){
+            var src=photos[parseInt(thumb.dataset.idx)].src;
+            $('#profileAvatarImg').src=src;
+            $('.nav-avatar').src=src;
+            $('.post-create-avatar').src=src;
+            closeModal();
+        });
+    });
+});
 $('#avatarFileInput').addEventListener('change',function(){
     var file=this.files[0];
     if(!file) return;
+    var isGif=file.type==='image/gif';
     var reader=new FileReader();
-    reader.onload=function(e){showCropModal(e.target.result);};
+    reader.onload=function(e){
+        if(isGif){
+            var url=e.target.result;
+            $('#profileAvatarImg').src=url;
+            $('.nav-avatar').src=url;
+            $('.post-create-avatar').src=url;
+            state.photos.profile.unshift({src:url,date:Date.now()});
+            renderPhotosCard();
+        } else {
+            showCropModal(e.target.result);
+        }
+    };
     reader.readAsDataURL(file);
 });
 
@@ -1893,11 +2029,6 @@ document.addEventListener('click',function(e){
     var a=e.target.closest('.user-dropdown a');
     if(a){
         var text=a.textContent.trim();
-        if(text==='My Coins'){
-            e.preventDefault();
-            $('#userDropdownMenu').classList.remove('show');
-            showModal('<div class="modal-header"><h3>My Coins</h3><button class="modal-close"><i class="fas fa-times"></i></button></div><div class="modal-body" style="text-align:center;"><div style="font-size:48px;color:#f59e0b;margin-bottom:8px;"><i class="fas fa-coins"></i></div><div style="font-size:32px;font-weight:700;color:var(--dark);margin-bottom:4px;">'+state.coins+'</div><p style="color:var(--gray);font-size:14px;margin-bottom:16px;">Earn coins by liking posts. Spend them in the Skin Shop!</p><div style="display:flex;gap:8px;justify-content:center;"><button class="btn btn-primary" data-page="shop">Visit Shop</button></div></div>');
-        }
         if(text==='Settings'){
             e.preventDefault();
             $('#userDropdownMenu').classList.remove('show');
@@ -2264,7 +2395,7 @@ $('#openPostModal').addEventListener('click',function(){
         postHtml+='<button class="action-btn comment-btn"><i class="far fa-comment"></i><span>0</span></button>';
         postHtml+='<button class="action-btn share-btn"><i class="fas fa-share-from-square"></i><span>0</span></button></div></div></div>';
         container.insertAdjacentHTML('afterbegin',postHtml);
-        state.coins+=5;updateCoins();
+        if(state.postCoinCount<10){state.coins+=5;state.postCoinCount++;updateCoins();}
         closeModal();
         var newPost=container.firstElementChild;
         var likeBtn=newPost.querySelector('.like-btn');

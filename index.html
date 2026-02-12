@@ -97,7 +97,6 @@
                     <i class="fas fa-chevron-down"></i>
                     <div class="user-dropdown" id="userDropdownMenu">
                         <a href="#" id="dropdownViewProfile"><i class="fas fa-user"></i> My Profile</a>
-                        <a href="#"><i class="fas fa-coins"></i> My Coins</a>
                         <a href="#" data-page="skins"><i class="fas fa-palette"></i> My Skins</a>
                         <a href="#"><i class="fas fa-cog"></i> Settings</a>
                         <a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
@@ -126,7 +125,7 @@
                         <div class="profile-avatar-wrap">
                             <img src="https://i.pravatar.cc/100?img=12" alt="John Doe" class="profile-avatar" id="profileAvatarImg">
                             <button class="avatar-edit-btn" id="avatarEditBtn" title="Change Photo"><i class="fas fa-camera"></i></button>
-                            <input type="file" id="avatarFileInput" accept="image/*" style="display:none;">
+                            <input type="file" id="avatarFileInput" accept="image/*,image/gif" style="display:none;">
                         </div>
                         <h3 class="profile-name">John Doe</h3>
                         <p class="profile-title">Living my best life</p>
@@ -268,6 +267,7 @@
             <div class="page-header">
                 <h2><i class="fas fa-bell"></i> Notifications</h2>
             </div>
+            <div class="search-tabs" id="notifTabs"></div>
             <div id="notifList">
                 <div class="empty-state" id="noNotifMsg"><i class="fas fa-bell-slash"></i><p>No notifications yet.</p></div>
             </div>
