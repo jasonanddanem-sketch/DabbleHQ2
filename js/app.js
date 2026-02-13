@@ -1922,14 +1922,15 @@ $('#avatarEditBtn').addEventListener('click',function(e){
     html+='<div style="text-align:center;margin-bottom:16px;"><button class="btn btn-primary" id="avatarUploadNewBtn"><i class="fas fa-upload"></i> Upload New Photo</button></div>';
     if(photos.length>0){
         html+='<p style="font-size:13px;color:var(--gray);margin-bottom:12px;text-align:center;">Or select from previous uploads:</p>';
-        html+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:10px;max-height:300px;overflow-y:auto;">';
+        html+='<div class="shop-scroll-row" id="avatarPickRow" style="gap:12px;padding:8px 4px 12px;">';
         photos.forEach(function(p,i){
-            html+='<img src="'+p.src+'" class="avatar-pick-thumb" data-idx="'+i+'" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;cursor:pointer;border:3px solid transparent;transition:border-color .2s;">';
+            html+='<img src="'+p.src+'" class="avatar-pick-thumb" data-idx="'+i+'" style="min-width:80px;max-width:80px;height:80px;object-fit:cover;border-radius:8px;cursor:pointer;border:3px solid transparent;transition:border-color .2s;flex-shrink:0;scroll-snap-align:start;">';
         });
         html+='</div>';
     }
     html+='</div>';
     showModal(html);
+    if(photos.length>0) initDragScroll('#modalContent');
     document.getElementById('avatarUploadNewBtn').addEventListener('click',function(){closeModal();$('#avatarFileInput').click();});
     $$('.avatar-pick-thumb').forEach(function(thumb){
         thumb.addEventListener('mouseenter',function(){thumb.style.borderColor='var(--primary)';});
@@ -2934,7 +2935,6 @@ function renderPhotosCard(){
     var html='';
     all.slice(0,6).forEach(function(p){html+='<img src="'+p.src+'">';});
     el.innerHTML=html;
-    el.querySelectorAll('img').forEach(function(img,i){img.addEventListener('click',function(){showPhotoLightbox(all[i].src);});});
 }
 function renderPhotoAlbum(){
     var html='<div style="display:flex;justify-content:flex-end;margin-bottom:16px;"><button class="btn btn-primary" id="createAlbumBtn"><i class="fas fa-plus"></i> Create Album</button></div>';
@@ -2988,9 +2988,6 @@ function renderPhotoAlbum(){
             input.click();
         });
     });
-}
-function showPhotoLightbox(src){
-    showModal('<div class="modal-header"><h3>Photo</h3><button class="modal-close"><i class="fas fa-times"></i></button></div><div class="modal-body" style="padding:0;text-align:center;"><img src="'+src+'" style="width:100%;border-radius:0 0 14px 14px;display:block;"></div>');
 }
 $('#viewAllPhotos').addEventListener('click',function(e){e.preventDefault();renderPhotoAlbum();navigateTo('photos');});
 $$('.photos-back-link').forEach(function(l){l.addEventListener('click',function(e){e.preventDefault();navigateTo('home');});});
