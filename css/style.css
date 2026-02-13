@@ -1652,18 +1652,69 @@ body.nav-pill .nav-link:hover span:not(.notif-badge){display:block!important;pos
     html{overflow-x:hidden;}
     body{overflow-x:hidden;max-width:100vw;}
 
-    /* --- Navbar --- */
-    .navbar{height:54px!important;}
+    /* --- Navbar — top bar compact --- */
+    .navbar{height:48px!important;max-height:48px!important;}
     .nav-container{padding:0 10px!important;gap:6px!important;}
     .nav-logo{font-size:clamp(13px,3.5vw,18px)!important;padding:4px 10px!important;}
     .search-bar{width:110px!important;}
     .search-bar input{font-size:12px!important;padding:6px 10px 6px 30px!important;}
-    .nav-link{padding:6px 5px!important;}
-    .nav-link i{font-size:15px!important;}
-    .nav-link span{display:none!important;}
     .nav-username{display:none!important;}
     .nav-coins{padding:4px 8px!important;font-size:12px!important;}
     .nav-user .fa-chevron-down{display:none!important;}
+
+    /* --- Bottom nav — pill-style for ALL nav styles --- */
+    .nav-center{
+        position:fixed!important;bottom:0!important;left:0!important;right:0!important;
+        top:auto!important;transform:none!important;
+        background:var(--nav-bg)!important;
+        padding:6px 8px calc(env(safe-area-inset-bottom,0px) + 6px)!important;
+        border-radius:0!important;gap:0!important;
+        box-shadow:0 -2px 16px rgba(0,0,0,.25)!important;
+        z-index:999!important;width:100%!important;
+        justify-content:space-around!important;
+        flex-direction:row!important;flex:none!important;
+        height:auto!important;max-height:none!important;
+        overflow:visible!important;border:none!important;margin:0!important;
+        pointer-events:auto!important;
+    }
+    .nav-link{
+        flex-direction:column!important;align-items:center!important;
+        gap:2px!important;padding:6px 4px!important;border-radius:8px!important;
+        font-size:10px!important;color:rgba(255,255,255,.7)!important;
+        width:auto!important;justify-content:center!important;
+        max-height:none!important;border-bottom:none!important;
+        position:relative!important;flex-shrink:1!important;
+        min-width:0!important;
+    }
+    .nav-link i{font-size:18px!important;width:auto!important;}
+    .nav-link span{
+        display:block!important;font-size:9px!important;
+        opacity:.7!important;white-space:nowrap!important;
+        overflow:hidden!important;text-overflow:ellipsis!important;
+        max-width:56px!important;text-align:center!important;
+        position:static!important;transform:none!important;
+        background:none!important;padding:0!important;
+        margin:0!important;border-radius:0!important;
+        color:inherit!important;pointer-events:auto!important;
+        line-height:1.2!important;
+    }
+    .nav-link:hover span:not(.notif-badge),.nav-link:focus span:not(.notif-badge){
+        position:static!important;transform:none!important;
+        background:none!important;padding:0!important;margin:0!important;
+        top:auto!important;bottom:auto!important;left:auto!important;
+        font-size:9px!important;color:inherit!important;
+        z-index:auto!important;border-radius:0!important;
+        white-space:nowrap!important;pointer-events:auto!important;
+        display:block!important;opacity:.7!important;
+    }
+    .nav-link.active:hover span:not(.notif-badge){opacity:1!important;}
+    .nav-link.active{color:#fff!important;background:rgba(255,255,255,.12)!important;}
+    .nav-link.active span{opacity:1!important;}
+    .notif-badge{
+        position:absolute!important;top:0!important;right:0!important;
+        width:14px!important;height:14px!important;font-size:8px!important;
+        margin:0!important;
+    }
 
     /* --- Main layout — force single column --- */
     .main-container{
@@ -1763,31 +1814,21 @@ body.nav-pill .nav-link:hover span:not(.notif-badge){display:block!important;pos
         flex:none!important;min-width:0!important;aspect-ratio:1!important;
     }
 
-    /* --- Nav Metro → top bar on mobile --- */
+    /* --- Nav Metro → top bar on mobile (sidebar → horizontal) --- */
     body.nav-metro .navbar{
         position:fixed!important;top:0!important;left:0!important;right:0!important;
-        bottom:auto!important;width:100%!important;height:54px!important;max-height:54px!important;overflow:hidden!important;
+        bottom:auto!important;width:100%!important;height:48px!important;max-height:48px!important;overflow:visible!important;
     }
     body.nav-metro .nav-container{
         flex-direction:row!important;align-items:center!important;
         height:100%!important;padding:0 10px!important;gap:6px!important;
     }
     body.nav-metro .nav-left{flex-direction:row!important;align-items:center!important;gap:8px!important;}
-    body.nav-metro .nav-center{
-        flex-direction:row!important;flex:1!important;justify-content:center!important;
-        gap:2px!important;padding:0!important;margin:0!important;border:none!important;overflow:hidden!important;
-    }
-    body.nav-metro .nav-link{
-        flex-direction:column!important;padding:6px 5px!important;width:auto!important;justify-content:center!important;
-    }
-    body.nav-metro .nav-link span{display:none!important;}
-    body.nav-metro .nav-link i{width:auto!important;font-size:15px!important;}
     body.nav-metro .nav-right{flex-direction:row!important;align-items:center!important;gap:6px!important;}
     body.nav-metro .nav-coins{flex-direction:row!important;padding:4px 8px!important;font-size:12px!important;border-radius:16px!important;}
-    body.nav-metro .notif-badge{position:absolute!important;top:2px!important;right:2px!important;margin:0!important;width:14px!important;height:14px!important;font-size:8px!important;}
-    body.nav-metro .page{padding-left:0!important;padding-top:64px!important;}
-    body.nav-metro #page-home{padding-top:0!important;}
-    body.nav-metro .main-container{margin-top:-54px!important;}
+    body.nav-metro .page{padding-left:0!important;padding-top:58px!important;}
+    body.nav-metro #page-home{padding-top:48px!important;}
+    body.nav-metro .main-container{margin-top:-48px!important;}
     body.nav-metro .user-dropdown{top:100%!important;bottom:auto!important;left:auto!important;right:0!important;margin:4px 0 0!important;}
     body.nav-metro .nav-username{display:none!important;}
     body.nav-metro .search-bar{width:90px!important;}
@@ -1797,7 +1838,7 @@ body.nav-pill .nav-link:hover span:not(.notif-badge){display:block!important;pos
     /* --- Nav Rail → top bar on mobile --- */
     body.nav-rail .navbar{
         position:fixed!important;top:0!important;left:0!important;right:0!important;
-        bottom:auto!important;width:100%!important;height:54px!important;overflow:hidden!important;
+        bottom:auto!important;width:100%!important;height:48px!important;overflow:visible!important;
     }
     body.nav-rail .nav-container{
         flex-direction:row!important;align-items:center!important;
@@ -1805,18 +1846,10 @@ body.nav-pill .nav-link:hover span:not(.notif-badge){display:block!important;pos
     }
     body.nav-rail .nav-left{flex-direction:row!important;align-items:center!important;gap:8px!important;}
     body.nav-rail .search-bar{display:block!important;width:90px!important;}
-    body.nav-rail .nav-center{
-        flex-direction:row!important;flex:1!important;justify-content:center!important;
-        gap:2px!important;padding:0!important;margin:0!important;border:none!important;
-    }
-    body.nav-rail .nav-link{flex-direction:column!important;padding:6px 5px!important;width:auto!important;}
-    body.nav-rail .nav-link span{display:none!important;}
-    body.nav-rail .nav-link i{font-size:15px!important;}
     body.nav-rail .nav-right{flex-direction:row!important;align-items:center!important;gap:6px!important;}
     body.nav-rail .nav-coins{flex-direction:row!important;padding:4px 8px!important;font-size:12px!important;border-radius:16px!important;}
-    body.nav-rail .notif-badge{position:absolute!important;top:2px!important;right:2px!important;margin:0!important;}
-    body.nav-rail .page{padding-left:0!important;padding-top:64px!important;}
-    body.nav-rail #page-home{padding-top:0!important;}
+    body.nav-rail .page{padding-left:0!important;padding-top:58px!important;}
+    body.nav-rail #page-home{padding-top:48px!important;}
     body.nav-rail .user-dropdown{top:100%!important;bottom:auto!important;left:auto!important;right:0!important;margin:4px 0 0!important;}
     body.nav-rail .timeline-cover{margin:0 auto!important;}
     body.nav-rail .pv-cover-banner{margin:0 auto!important;}
@@ -1824,53 +1857,86 @@ body.nav-pill .nav-link:hover span:not(.notif-badge){display:block!important;pos
     /* --- Nav Mirror → top bar on mobile --- */
     body.nav-mirror .navbar{
         position:fixed!important;top:0!important;left:0!important;right:0!important;
-        bottom:auto!important;width:100%!important;height:54px!important;max-height:54px!important;overflow:hidden!important;
+        bottom:auto!important;width:100%!important;height:48px!important;max-height:48px!important;overflow:visible!important;
     }
     body.nav-mirror .nav-container{
         flex-direction:row!important;align-items:center!important;
         height:100%!important;padding:0 10px!important;gap:6px!important;
     }
     body.nav-mirror .nav-left{flex-direction:row!important;align-items:center!important;gap:8px!important;}
-    body.nav-mirror .nav-center{
-        flex-direction:row!important;flex:1!important;justify-content:center!important;
-        gap:2px!important;padding:0!important;margin:0!important;border:none!important;overflow:hidden!important;
-    }
-    body.nav-mirror .nav-link{
-        flex-direction:column!important;padding:6px 5px!important;width:auto!important;justify-content:center!important;
-    }
-    body.nav-mirror .nav-link span{display:none!important;}
-    body.nav-mirror .nav-link i{width:auto!important;font-size:15px!important;}
     body.nav-mirror .nav-right{flex-direction:row!important;align-items:center!important;gap:6px!important;}
     body.nav-mirror .nav-coins{flex-direction:row!important;padding:4px 8px!important;font-size:12px!important;border-radius:16px!important;}
-    body.nav-mirror .notif-badge{position:absolute!important;top:2px!important;right:2px!important;margin:0!important;width:14px!important;height:14px!important;font-size:8px!important;}
-    body.nav-mirror .page{padding-right:0!important;padding-top:64px!important;}
-    body.nav-mirror #page-home{padding-top:0!important;}
-    body.nav-mirror .main-container{margin-top:-54px!important;}
+    body.nav-mirror .page{padding-right:0!important;padding-top:58px!important;}
+    body.nav-mirror #page-home{padding-top:48px!important;}
+    body.nav-mirror .main-container{margin-top:-48px!important;}
     body.nav-mirror .user-dropdown{top:100%!important;bottom:auto!important;right:0!important;left:auto!important;margin:4px 0 0!important;}
     body.nav-mirror .nav-username{display:none!important;}
     body.nav-mirror .search-bar{width:90px!important;}
     body.nav-mirror .timeline-cover{margin-top:0!important;}
     body.nav-mirror .pv-cover-banner{margin:0 auto!important;}
 
-    /* --- Nav Dock/Pill/Split bottom bars --- */
-    body.nav-dock .nav-link span,body.nav-pill .nav-link span{font-size:0!important;}
-    body.nav-dock .nav-link i,body.nav-pill .nav-link i{font-size:18px!important;}
-    body.nav-horizon .nav-link span{display:none!important;}
-    body.nav-dock .nav-center,body.nav-pill .nav-center,body.nav-split .nav-center{padding-left:4px!important;padding-right:4px!important;}
+    /* --- Nav Dock — already bottom, just unify with global bottom nav --- */
+    body.nav-dock .navbar{height:48px!important;}
+    body.nav-dock .page{padding-bottom:72px!important;}
+    body.nav-dock .messages-layout{height:calc(100vh - 140px)!important;}
 
-    /* --- Nav Shelf compact --- */
-    body.nav-shelf .nav-link{padding:8px 10px!important;}
-    body.nav-shelf .nav-link span{display:none!important;}
-    body.nav-shelf .page{padding-top:76px!important;}
-    body.nav-shelf #page-home .timeline-cover{margin-top:36px!important;}
-    body.nav-shelf .pv-cover-banner{margin-top:36px!important;}
-    body.nav-shelf .gv-cover-banner{margin-top:36px!important;}
+    /* --- Nav Pill — already bottom pill, unify --- */
+    body.nav-pill .navbar{height:48px!important;}
+    body.nav-pill .nav-center{border-radius:0!important;bottom:0!important;left:0!important;right:0!important;transform:none!important;width:100%!important;}
+    body.nav-pill .page{padding-bottom:72px!important;}
+    body.nav-pill .messages-layout{height:calc(100vh - 140px)!important;}
 
-    /* --- Nav Float/Island compact --- */
+    /* --- Nav Horizon — already bottom, unify --- */
+    body.nav-horizon .navbar{top:0!important;bottom:auto!important;border-radius:0!important;box-shadow:0 2px 10px rgba(0,0,0,.3)!important;height:48px!important;}
+    body.nav-horizon .user-dropdown{top:100%!important;bottom:auto!important;margin-top:4px!important;margin-bottom:0!important;}
+    body.nav-horizon .page{padding-top:58px!important;padding-bottom:72px!important;}
+    body.nav-horizon #page-home{padding-top:48px!important;}
+    body.nav-horizon .timeline-cover{margin-top:0!important;}
+    body.nav-horizon .main-container{margin-top:-48px!important;}
+
+    /* --- Nav Split — already split bottom, unify --- */
+    body.nav-split .page{padding-bottom:72px!important;}
+
+    /* --- Nav Shelf → compact single row on mobile --- */
+    body.nav-shelf .navbar{height:48px!important;}
+    body.nav-shelf .nav-container{flex-wrap:nowrap!important;padding:0 10px!important;}
+    body.nav-shelf .nav-left{padding-bottom:0!important;}
+    body.nav-shelf .nav-right{padding-bottom:0!important;}
+    body.nav-shelf .page{padding-top:58px!important;}
+    body.nav-shelf #page-home .timeline-cover{margin-top:0!important;}
+    body.nav-shelf .pv-cover-banner{margin-top:0!important;}
+    body.nav-shelf .gv-cover-banner{margin-top:0!important;}
+
+    /* --- Nav Float/Island — compact top bar --- */
+    body.nav-float .navbar{top:0!important;left:0!important;right:0!important;border-radius:0!important;border:none!important;}
     body.nav-float .search-bar{width:90px!important;}
-    body.nav-float .search-bar:focus-within{width:130px!important;}
+    body.nav-float .search-bar:focus-within{width:120px!important;}
+    body.nav-float .page{padding-top:58px!important;}
+    body.nav-float #page-home{padding-top:58px!important;}
+    body.nav-float .timeline-cover{margin:48px auto 0!important;border-radius:0!important;}
+    body.nav-float .main-container{margin-top:-48px!important;}
+    body.nav-float .pv-cover-banner{margin:48px auto 0!important;border-radius:0!important;}
+
+    body.nav-island .navbar{pointer-events:auto!important;}
+    body.nav-island .nav-container{pointer-events:auto!important;padding:4px 8px!important;}
+    body.nav-island .nav-left{border-radius:8px!important;padding:4px 10px!important;}
+    body.nav-island .nav-right{border-radius:8px!important;padding:4px 8px!important;}
     body.nav-island .search-bar{width:70px!important;}
     body.nav-island .search-bar input{font-size:11px!important;}
+    body.nav-island .page{padding-top:58px!important;}
+    body.nav-island #page-home{padding-top:58px!important;}
+    body.nav-island .timeline-cover{margin:48px auto 0!important;border-radius:0!important;}
+    body.nav-island .main-container{margin-top:-48px!important;}
+    body.nav-island .pv-cover-banner{margin:48px auto 0!important;border-radius:0!important;}
+
+    /* --- Premium nav skin — apply to bottom bar --- */
+    body[class*="premium-"] .nav-center{background:var(--ps-nav)!important;background-size:200% 200%!important;animation:gradientShift 6s ease infinite!important;}
+
+    /* --- Image crop — prevent page scroll on touch --- */
+    .crop-container,.crop-box,.crop-resize,
+    #coverCropContainer,#coverCropBox,#coverCropResize{
+        touch-action:none!important;
+    }
 
     /* --- Modals — scale to screen --- */
     .modal-overlay{padding:10px!important;}
@@ -1884,11 +1950,12 @@ body.nav-pill .nav-link:hover span:not(.notif-badge){display:block!important;pos
     .modal-profile-top img{width:min(200px,70%)!important;}
 
     /* --- Messages --- */
-    .messages-layout{flex-direction:column!important;height:auto!important;max-height:none!important;}
+    .messages-layout{flex-direction:column!important;height:auto!important;max-height:none!important;margin-bottom:0!important;}
     .msg-sidebar{width:100%!important;border-right:none!important;border-bottom:1px solid var(--border)!important;max-height:280px!important;}
-    .msg-chat{min-height:400px;}
-    .msg-chat-messages{min-height:200px;}
+    .msg-chat{min-height:calc(100vh - 400px);}
+    .msg-chat-messages{min-height:200px;padding-bottom:80px!important;}
     .msg-bubble{max-width:85%;}
+    .msg-chat-input{padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))!important;}
 
     /* --- Feed posts --- */
     .feed-post{padding:14px!important;}
@@ -1923,9 +1990,9 @@ body.nav-pill .nav-link:hover span:not(.notif-badge){display:block!important;pos
     .search-tab{padding:10px 14px;font-size:clamp(12px,3vw,14px);flex-shrink:0;}
     .feed-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;}
 
-    /* --- Spacing --- */
-    .page{padding-top:64px!important;}
-    #page-home{padding-top:54px!important;}
+    /* --- Spacing — account for bottom nav --- */
+    .page{padding-top:58px!important;padding-bottom:72px!important;}
+    #page-home{padding-top:48px!important;}
     .page-container{padding:0 12px 40px!important;}
     .page-header{margin-bottom:16px;}
     .promo-card{padding:18px 14px;}
