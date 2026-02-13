@@ -148,7 +148,7 @@ var state = {
     groupReplyCoinPosts: {}
 };
 // Pre-follow 15 users and pre-join groups (persists as hardcoded init)
-(function(){for(var i=1;i<=15;i++){state.followedUsers[i]=true;}state.following=15;state.joinedGroups[13]=true;state.joinedGroups[1]=true;state.joinedGroups[3]=true;})();
+(function(){for(var i=1;i<=15;i++){state.followedUsers[i]=true;}state.joinedGroups[13]=true;state.joinedGroups[1]=true;state.joinedGroups[3]=true;})();
 
 function getMyAvatar(){return $('#profileAvatarImg').src;}
 function syncAllAvatars(newSrc){
@@ -175,7 +175,7 @@ function findPostFolder(pid){var s=String(pid);for(var i=0;i<savedFolders.length
 
 // ======================== DATA ========================
 var people = [
-    {id:1,name:'Sarah Miller',bio:'Photography lover',img:32},{id:2,name:'Mike Johnson',bio:'Music & Gaming',img:15,priv:true},
+    {id:1,name:'Sarah Miller',bio:'Photography lover',img:32,premiumSkin:'sakura',premiumBg:{src:'https://images.unsplash.com/photo-1522383225653-ed111181a951?w=1920&q=80',saturation:120}},{id:2,name:'Mike Johnson',bio:'Music & Gaming',img:15,priv:true},
     {id:3,name:'Emily Chen',bio:'Travel addict',img:25},{id:4,name:'David Park',bio:'Fitness & Food',img:45,priv:true},
     {id:5,name:'James Wilson',bio:'Skater & Artist',img:11},{id:6,name:'Lisa Wang',bio:'Bookworm',img:16,priv:true},
     {id:7,name:'Carlos Rivera',bio:'Music Producer',img:22},{id:8,name:'Anna Kowalski',bio:'Fitness Coach',img:35},
@@ -187,7 +187,7 @@ var people = [
     {id:19,name:'Ethan Moore',bio:'Hiking enthusiast',img:56,priv:true},{id:20,name:'Mia Jackson',bio:'Art & Design',img:36,priv:true}
 ];
 // Assign skins/fonts/templates to people for profile previews
-(function(){var sk=[null,'midnight','ocean','forest','royal','sunset'];var fn=[null,'orbitron','rajdhani','quicksand','pacifico','baloo'];var tp=[null,'panorama','compact','reverse','dashboard','cinema','magazine'];people.forEach(function(p){p.skin=sk[p.id%sk.length];p.font=fn[p.id%fn.length];p.template=tp[p.id%tp.length];});})();
+(function(){var sk=[null,'midnight','ocean','forest','royal','sunset','cherry','slate','ember','arctic','moss'];var fn=[null,'orbitron','rajdhani','quicksand','pacifico','baloo','playfair','space-grotesk','caveat','archivo'];var tp=[null,'panorama','compact','reverse','dashboard','cinema','magazine','spotlight','widescreen','duo','headline','stack','grid','journal','wing','hub','zen','focus'];people.forEach(function(p){p.skin=sk[p.id%sk.length];p.font=fn[p.id%fn.length];p.template=tp[p.id%tp.length];});})();
 
 // Friends map — each person's connections (bidirectional). People follow each other here.
 var friendsOf={
@@ -575,11 +575,24 @@ function timeAgo(i){
 
 // ======================== NAVIGATION ========================
 var _pvSaved=null;
+var _gvSaved=null;
+var _navCurrent='home';var _navPrev='home';
 function navigateTo(page){
     // Restore user's skin/font/template when leaving profile view
     if(_pvSaved&&page!=='profile-view'){
+        premiumBgImage=_pvSaved.bgImage;premiumBgSaturation=_pvSaved.bgSat;
+        state.activePremiumSkin=_pvSaved.premiumSkin||null;
         applySkin(_pvSaved.skin||null,true);applyFont(_pvSaved.font||null,true);applyTemplate(_pvSaved.tpl||null,true);
+        if(_pvSaved.premiumSkin)applyPremiumSkin(_pvSaved.premiumSkin,true);
+        else updatePremiumBg();
         _pvSaved=null;
+    }
+    // Restore user's skin when leaving group view
+    if(_gvSaved){
+        premiumBgImage=_gvSaved.bgImage;premiumBgSaturation=_gvSaved.bgSat;
+        if(_gvSaved.premiumSkin) applyPremiumSkin(_gvSaved.premiumSkin,true);
+        else{applySkin(_gvSaved.skin||null,true);updatePremiumBg();}
+        _gvSaved=null;
     }
     $$('.page').forEach(function(p){p.classList.remove('active');});
     var target=document.getElementById('page-'+page);
@@ -595,10 +608,12 @@ function navigateTo(page){
         updateNotifBadge();
         renderNotifications();
     }
+    if(page==='groups') renderGroups();
     if(page==='shop') renderShop();
     if(page==='skins') renderMySkins();
     if(page==='photos') renderPhotoAlbum();
     if(page==='saved') renderSavedPage();
+    _navPrev=_navCurrent;_navCurrent=page;
 }
 
 document.addEventListener('click',function(e){
@@ -786,6 +801,8 @@ $('#navCoins').addEventListener('click',function(){
 
 // ======================== FOLLOW SYSTEM ========================
 function updateFollowCounts(){
+    state.following=Object.keys(state.followedUsers).length;
+    state.followers=myFollowers.length;
     $('#followingCount').textContent=state.following;
     $('#followersCount').textContent=state.followers;
 }
@@ -802,29 +819,18 @@ function toggleFollow(userId,btn){
     if(blockedUsers[userId]){showToast('Cannot follow a blocked user');return;}
     if(state.followedUsers[userId]){
         delete state.followedUsers[userId];
-        state.following--;
         if(btn){
-            btn.classList.remove('followed');
-            if(btn.classList.contains('follow-btn-small')){
-                btn.innerHTML='<i class="fas fa-plus"></i>';
-            } else {
-                btn.innerHTML='<i class="fas fa-plus"></i> Follow';
-                btn.classList.remove('btn-disabled');
-                btn.classList.add('btn-green');
-            }
+            btn.classList.remove('followed','btn-disabled');
+            btn.classList.add('btn-green');
+            btn.innerHTML=btn.classList.contains('follow-btn-small')?'<i class="fas fa-plus"></i>':'<i class="fas fa-plus"></i> Follow';
         }
     } else {
         state.followedUsers[userId]=true;
-        state.following++;
         if(btn){
             btn.classList.add('followed');
-            if(btn.classList.contains('follow-btn-small')){
-                btn.innerHTML='<i class="fas fa-check"></i>';
-            } else {
-                btn.innerHTML='<i class="fas fa-check"></i> Following';
-                btn.classList.remove('btn-green');
-                btn.classList.add('btn-disabled');
-            }
+            btn.classList.remove('btn-green');
+            btn.classList.add('btn-disabled');
+            btn.innerHTML=btn.classList.contains('follow-btn-small')?'<i class="fas fa-check"></i>':'<i class="fas fa-check"></i> Following';
         }
         addNotification('follow','You are now following '+people.find(function(p){return p.id===userId;}).name);
     }
@@ -897,9 +903,11 @@ function renderNotifications(){
 function showModal(html){
     $('#modalContent').innerHTML=html;
     $('#modalOverlay').classList.add('show');
+    document.body.style.overflow='hidden';
 }
 function closeModal(){
     $('#modalOverlay').classList.remove('show');
+    document.body.style.overflow='';
 }
 $('#modalOverlay').addEventListener('click',function(e){
     if(e.target===this) closeModal();
@@ -940,16 +948,17 @@ function handleShare(btn){
         ph+='<div class="post-actions"><div class="action-left"><button class="action-btn like-btn" data-post-id="'+postId+'"><i class="far '+activeIcons.like+'"></i><span class="like-count">0</span></button>';
         ph+='<button class="action-btn dislike-btn" data-post-id="'+postId+'"><i class="far '+activeIcons.dislike+'"></i><span class="dislike-count">0</span></button>';
         ph+='<button class="action-btn comment-btn"><i class="far '+activeIcons.comment+'"></i><span>0</span></button>';
-        ph+='<button class="action-btn share-btn"><i class="fas '+activeIcons.share+'"></i><span>0</span></button></div></div></div>';
+        ph+='<button class="action-btn share-btn"><i class="fas '+activeIcons.share+'"></i><span>0</span></button></div></div>';
+        ph+='<div class="post-comments" data-post-id="'+postId+'"></div></div>';
         container.insertAdjacentHTML('afterbegin',ph);
         if(state.postCoinCount<10){state.coins+=5;state.postCoinCount++;updateCoins();}
         closeModal();
         var countEl=btn.querySelector('span');if(countEl)countEl.textContent=parseInt(countEl.textContent)+1;
         var np=container.firstElementChild;
         var lb=np.querySelector('.like-btn');
-        lb.addEventListener('click',function(){var c=lb.querySelector('.like-count');var n=parseInt(c.textContent);var pid=lb.getAttribute('data-post-id');if(state.likedPosts[pid]){delete state.likedPosts[pid];lb.classList.remove('liked');lb.querySelector('i').className='far '+activeIcons.like;c.textContent=n-1;state.coins--;updateCoins();}else{state.likedPosts[pid]=true;lb.classList.add('liked');lb.querySelector('i').className='fas '+activeIcons.like;c.textContent=n+1;state.coins++;updateCoins();}});
+        lb.addEventListener('click',function(){var c=lb.querySelector('.like-count');var n=parseInt(c.textContent);var pid=lb.getAttribute('data-post-id');var had=!!(state.likedPosts[pid]||state.dislikedPosts[pid]);if(state.likedPosts[pid]){delete state.likedPosts[pid];lb.classList.remove('liked');lb.querySelector('i').className='far '+activeIcons.like;c.textContent=n-1;}else{if(state.dislikedPosts[pid]){var dc=db.querySelector('.dislike-count');dc.textContent=parseInt(dc.textContent)-1;delete state.dislikedPosts[pid];db.classList.remove('disliked');db.querySelector('i').className='far '+activeIcons.dislike;}state.likedPosts[pid]=true;lb.classList.add('liked');lb.querySelector('i').className='fas '+activeIcons.like;c.textContent=n+1;}var has=!!(state.likedPosts[pid]||state.dislikedPosts[pid]);if(!had&&has){state.coins++;updateCoins();}else if(had&&!has){state.coins--;updateCoins();}});
         var db=np.querySelector('.dislike-btn');
-        db.addEventListener('click',function(){var c=db.querySelector('.dislike-count');var n=parseInt(c.textContent);var pid=db.getAttribute('data-post-id');if(state.dislikedPosts[pid]){delete state.dislikedPosts[pid];db.classList.remove('disliked');db.querySelector('i').className='far '+activeIcons.dislike;c.textContent=n-1;}else{state.dislikedPosts[pid]=true;db.classList.add('disliked');db.querySelector('i').className='fas '+activeIcons.dislike;c.textContent=n+1;}});
+        db.addEventListener('click',function(){var c=db.querySelector('.dislike-count');var n=parseInt(c.textContent);var pid=db.getAttribute('data-post-id');var had=!!(state.likedPosts[pid]||state.dislikedPosts[pid]);if(state.dislikedPosts[pid]){delete state.dislikedPosts[pid];db.classList.remove('disliked');db.querySelector('i').className='far '+activeIcons.dislike;c.textContent=n-1;}else{if(state.likedPosts[pid]){var lc=lb.querySelector('.like-count');lc.textContent=parseInt(lc.textContent)-1;delete state.likedPosts[pid];lb.classList.remove('liked');lb.querySelector('i').className='far '+activeIcons.like;}state.dislikedPosts[pid]=true;db.classList.add('disliked');db.querySelector('i').className='fas '+activeIcons.dislike;c.textContent=n+1;}var has=!!(state.likedPosts[pid]||state.dislikedPosts[pid]);if(!had&&has){state.coins++;updateCoins();}else if(had&&!has){state.coins--;updateCoins();}});
         np.querySelector('.comment-btn').addEventListener('click',function(){showComments(postId,np.querySelector('.comment-btn span'));});
         np.querySelector('.share-btn').addEventListener('click',function(){handleShare(np.querySelector('.share-btn'));});
     });
@@ -1086,7 +1095,8 @@ function bindCommentLikes(){
             else{
                 if(dislikedComments[cid]&&disBtn){delete dislikedComments[cid];var ds=disBtn.querySelector('span');ds.textContent=parseInt(ds.textContent)-1;disBtn.style.color='#999';disBtn.querySelector('i').className='far fa-thumbs-down';}
                 likedComments[cid]=true;ct++;btn.style.color='var(--primary)';btn.querySelector('i').className='fas fa-thumbs-up';
-                if(!commentCoinAwarded[cid]){commentCoinAwarded[cid]=true;state.coins+=1;updateCoins();}
+                var isOwn=cid.indexOf('-u-')!==-1||cid.indexOf('-r-')!==-1;
+                if(!isOwn&&!commentCoinAwarded[cid]){commentCoinAwarded[cid]=true;state.coins+=1;updateCoins();}
             }
             span.textContent=ct;
         };
@@ -1099,7 +1109,8 @@ function bindCommentLikes(){
             else{
                 if(likedComments[cid]&&likeBtn){delete likedComments[cid];var ls=likeBtn.querySelector('span');ls.textContent=parseInt(ls.textContent)-1;likeBtn.style.color='#999';likeBtn.querySelector('i').className='far fa-thumbs-up';}
                 dislikedComments[cid]=true;ct++;btn.style.color='var(--primary)';btn.querySelector('i').className='fas fa-thumbs-down';
-                if(!commentCoinAwarded[cid]){commentCoinAwarded[cid]=true;state.coins+=1;updateCoins();}
+                var isOwn=cid.indexOf('-u-')!==-1||cid.indexOf('-r-')!==-1;
+                if(!isOwn&&!commentCoinAwarded[cid]){commentCoinAwarded[cid]=true;state.coins+=1;updateCoins();}
             }
             span.textContent=ct;
         };
@@ -1136,7 +1147,8 @@ function renderInlineComments(postId){
             else{
                 if(dislikedComments[cid]&&disBtn){delete dislikedComments[cid];disBtn.style.color='#999';disBtn.querySelector('i').className='far fa-thumbs-down';disBtn.lastChild.textContent=0;}
                 likedComments[cid]=true;btn.style.color='var(--primary)';btn.querySelector('i').className='fas fa-thumbs-up';btn.lastChild.textContent=base+1;
-                if(!commentCoinAwarded[cid]){commentCoinAwarded[cid]=true;state.coins+=1;updateCoins();}
+                var isOwn=cid.indexOf('-u-')!==-1||cid.indexOf('-r-')!==-1;
+                if(!isOwn&&!commentCoinAwarded[cid]){commentCoinAwarded[cid]=true;state.coins+=1;updateCoins();}
             }
         };
     });
@@ -1148,7 +1160,8 @@ function renderInlineComments(postId){
             else{
                 if(likedComments[cid]&&likeBtn){delete likedComments[cid];var gen2=getComments(postId);var base2=0;gen2.forEach(function(c,i){if(postId+'-g-'+i===cid)base2=c.likes;});likeBtn.style.color='#999';likeBtn.querySelector('i').className='far fa-thumbs-up';likeBtn.lastChild.textContent=base2;}
                 dislikedComments[cid]=true;btn.style.color='var(--primary)';btn.querySelector('i').className='fas fa-thumbs-down';btn.lastChild.textContent=1;
-                if(!commentCoinAwarded[cid]){commentCoinAwarded[cid]=true;state.coins+=1;updateCoins();}
+                var isOwn=cid.indexOf('-u-')!==-1||cid.indexOf('-r-')!==-1;
+                if(!isOwn&&!commentCoinAwarded[cid]){commentCoinAwarded[cid]=true;state.coins+=1;updateCoins();}
             }
         };
     });
@@ -1242,6 +1255,7 @@ function showProfileView(person){
     $$('.page').forEach(function(p){p.classList.remove('active');});
     document.getElementById('page-profile-view').classList.add('active');
     $$('.nav-link').forEach(function(l){l.classList.remove('active');});
+    _navPrev=_navCurrent;_navCurrent='profile-view';
     window.scrollTo(0,0);
 
     var isMe=person.isMe||false;
@@ -1250,9 +1264,19 @@ function showProfileView(person){
     var followers=isMe?state.followers:(personFollowers[person.id]||[]).length;
 
     // Apply viewed person's skin/font/template (silent, don't change state)
-    _pvSaved={skin:state.activeSkin,font:state.activeFont,tpl:state.activeTemplate};
+    _pvSaved={skin:state.activeSkin,premiumSkin:state.activePremiumSkin,font:state.activeFont,tpl:state.activeTemplate,bgImage:premiumBgImage,bgSat:premiumBgSaturation};
     if(!isMe){
-        applySkin(person.skin||null,true);
+        if(person.premiumSkin){
+            applyPremiumSkin(person.premiumSkin,true);
+            if(person.premiumBg){premiumBgImage=person.premiumBg.src;premiumBgSaturation=person.premiumBg.saturation||100;}
+            else{premiumBgImage=null;premiumBgSaturation=100;}
+            // Temporarily set activePremiumSkin so updatePremiumBg shows the bg
+            state.activePremiumSkin=person.premiumSkin;
+            updatePremiumBg();
+        } else {
+            premiumBgImage=null;updatePremiumBg();
+            applySkin(person.skin||null,true);
+        }
         applyFont(person.font||null,true);
         applyTemplate(person.template||null,true);
     }
@@ -1286,7 +1310,7 @@ function showProfileView(person){
     if(isMe){
         var allPhotos=getAllPhotos();
         if(allPhotos.length){allPhotos.slice(0,9).forEach(function(p){photosHtml+='<img src="'+p.src+'">';});}
-        else{for(var pi=0;pi<8;pi++){photosHtml+='<img src="https://picsum.photos/seed/me-'+pi+'/200">';}}
+        else{photosHtml+='<p class="photos-empty" style="color:var(--gray);font-size:13px;text-align:center;padding:20px 0;">No photos yet. Upload photos to see them here.</p>';}
     } else {
         var photoCount=6+((person.id*3)%6);
         for(var pi=0;pi<photoCount;pi++){photosHtml+='<img src="https://picsum.photos/seed/'+person.id+'-'+pi+'/200">';}
@@ -1300,10 +1324,14 @@ function showProfileView(person){
     var pvPhotosLink=document.querySelector('.pv-photos-link');
     if(pvPhotosLink)pvPhotosLink.addEventListener('click',function(e){e.preventDefault();renderPhotoAlbum();navigateTo('photos');});
 
-    // "What Skin Am I?" box - top row beside profile card and photos
-    var pvSkinName=person.skin?skins.find(function(s){return s.id===person.skin;}):null;
-    var pvFontName=person.font?fonts.find(function(f){return f.id===person.font;}):null;
-    var pvTplName=person.template?templates.find(function(t){return t.id===person.template;}):null;
+    // "What Skin Am I?" box - reads live state for own profile, person data for others
+    var pvSkinId=isMe?(state.activePremiumSkin||state.activeSkin):(person.premiumSkin||person.skin);
+    var pvFontId=isMe?state.activeFont:person.font;
+    var pvTplId=isMe?state.activeTemplate:person.template;
+    var pvSkinName=null;
+    if(pvSkinId){pvSkinName=skins.find(function(s){return s.id===pvSkinId;})||premiumSkins.find(function(s){return s.id===pvSkinId;});}
+    var pvFontName=pvFontId?fonts.find(function(f){return f.id===pvFontId;}):null;
+    var pvTplName=pvTplId?templates.find(function(t){return t.id===pvTplId;}):null;
     var skinHtml='<div class="card" style="padding:20px;"><h4 style="font-size:15px;font-weight:600;margin-bottom:14px;"><i class="fas fa-wand-magic-sparkles" style="color:var(--primary);margin-right:8px;"></i>What Skin Am I?</h4>';
     skinHtml+='<div style="display:flex;flex-direction:column;gap:10px;">';
     skinHtml+='<div style="display:flex;align-items:center;gap:10px;font-size:13px;"><i class="fas fa-palette" style="width:16px;color:var(--primary);"></i><span style="color:var(--gray);">Skin:</span><strong>'+(pvSkinName?pvSkinName.name:'Default')+'</strong></div>';
@@ -1456,31 +1484,87 @@ function showGroupModal(group){
     });
 }
 
+function getGroupThemeColor(group){
+    var premSkin=state.groupActivePremiumSkin[group.id];
+    var basicSkin=state.groupActiveSkin[group.id];
+    if(premSkin){var ps=premiumSkins.find(function(s){return s.id===premSkin;});if(ps)return ps.accent;}
+    if(basicSkin){if(skinColors[basicSkin])return skinColors[basicSkin].primary;var gs=guildSkins.find(function(s){return s.id===basicSkin;});if(gs)return gs.cardText;}
+    return group.color||'var(--primary)';
+}
+function showGroupProfileCropModal(src,group){
+    var html='<div class="modal-header"><h3>Crop Group Photo</h3><button class="modal-close"><i class="fas fa-times"></i></button></div>';
+    html+='<div class="modal-body" style="text-align:center;"><div class="crop-container" id="cropContainer"><img src="'+src+'" id="cropImg"><div class="crop-box" id="cropBox"><div class="crop-resize" id="cropResize"></div></div></div>';
+    html+='<div style="margin-top:16px;"><button class="btn btn-primary" id="cropConfirmBtn">Apply</button></div></div>';
+    showModal(html);
+    var img=document.getElementById('cropImg');var box=document.getElementById('cropBox');var resizeHandle=document.getElementById('cropResize');
+    img.onload=function(){var size=Math.min(img.clientWidth,img.clientHeight,200);box.style.width=size+'px';box.style.height=size+'px';box.style.left=((img.clientWidth-size)/2)+'px';box.style.top=((img.clientHeight-size)/2)+'px';};
+    var dragging=false,resizing=false,startX,startY,startL,startT,startW,startH;
+    box.addEventListener('mousedown',function(e){if(e.target===resizeHandle)return;dragging=true;startX=e.clientX;startY=e.clientY;startL=box.offsetLeft;startT=box.offsetTop;e.preventDefault();});
+    resizeHandle.addEventListener('mousedown',function(e){resizing=true;startX=e.clientX;startY=e.clientY;startW=box.offsetWidth;startH=box.offsetHeight;e.preventDefault();e.stopPropagation();});
+    document.addEventListener('mousemove',function onGpMove(e){if(dragging){var dx=e.clientX-startX,dy=e.clientY-startY;box.style.left=Math.max(0,Math.min(startL+dx,img.clientWidth-box.offsetWidth))+'px';box.style.top=Math.max(0,Math.min(startT+dy,img.clientHeight-box.offsetHeight))+'px';}if(resizing){var d=Math.max(e.clientX-startX,e.clientY-startY);var ns=Math.max(40,Math.min(startW+d,img.clientWidth-box.offsetLeft,img.clientHeight-box.offsetTop));box.style.width=ns+'px';box.style.height=ns+'px';}});
+    document.addEventListener('mouseup',function(){dragging=false;resizing=false;});
+    document.getElementById('cropConfirmBtn').addEventListener('click',function(){
+        var canvas=document.createElement('canvas');var scaleX=img.naturalWidth/img.clientWidth;var scaleY=img.naturalHeight/img.clientHeight;
+        var sx=box.offsetLeft*scaleX,sy=box.offsetTop*scaleY,sw=box.offsetWidth*scaleX,sh=box.offsetHeight*scaleY;
+        canvas.width=400;canvas.height=400;var ctx=canvas.getContext('2d');ctx.drawImage(img,sx,sy,sw,sh,0,0,400,400);
+        var url=canvas.toDataURL('image/png');
+        group.profileImg=url;
+        if(!group.photos) group.photos={profile:[],cover:[]};
+        group.photos.profile.unshift({src:url,date:Date.now()});
+        closeModal();showGroupView(group);renderGroups();
+    });
+}
+function showGroupCoverCropModal(src,group,banner){
+    var html='<div class="modal-header"><h3>Crop Cover Photo</h3><button class="modal-close"><i class="fas fa-times"></i></button></div>';
+    html+='<div class="modal-body" style="text-align:center;"><p style="font-size:13px;color:var(--gray);margin-bottom:12px;">Drag to position. Resize the selection area.</p><div class="crop-container" id="coverCropContainer" style="position:relative;display:inline-block;max-width:100%;overflow:hidden;"><img src="'+src+'" id="coverCropImg" style="max-width:100%;display:block;"><div id="coverCropBox" style="position:absolute;border:2px solid #fff;box-shadow:0 0 0 9999px rgba(0,0,0,.5);cursor:move;"><div id="coverCropResize" style="position:absolute;bottom:-4px;right:-4px;width:12px;height:12px;background:#fff;border:1px solid #333;cursor:nwse-resize;"></div></div></div>';
+    html+='<div style="margin-top:16px;"><button class="btn btn-primary" id="coverCropConfirmBtn">Apply</button></div></div>';
+    showModal(html);
+    var img=document.getElementById('coverCropImg');var box=document.getElementById('coverCropBox');var resizeHandle=document.getElementById('coverCropResize');
+    var aspectRatio=1280/350;
+    img.onload=function(){var w=Math.min(img.clientWidth,img.clientWidth*0.9);var h=Math.round(w/aspectRatio);if(h>img.clientHeight*0.9){h=Math.round(img.clientHeight*0.9);w=Math.round(h*aspectRatio);}box.style.width=w+'px';box.style.height=h+'px';box.style.left=((img.clientWidth-w)/2)+'px';box.style.top=((img.clientHeight-h)/2)+'px';};
+    var dragging=false,resizing=false,startX,startY,startL,startT,startW,startH;
+    box.addEventListener('mousedown',function(e){if(e.target===resizeHandle)return;dragging=true;startX=e.clientX;startY=e.clientY;startL=box.offsetLeft;startT=box.offsetTop;e.preventDefault();});
+    resizeHandle.addEventListener('mousedown',function(e){resizing=true;startX=e.clientX;startY=e.clientY;startW=box.offsetWidth;startH=box.offsetHeight;e.preventDefault();e.stopPropagation();});
+    document.addEventListener('mousemove',function onGcMove(e){if(dragging){box.style.left=Math.max(0,Math.min(startL+(e.clientX-startX),img.clientWidth-box.offsetWidth))+'px';box.style.top=Math.max(0,Math.min(startT+(e.clientY-startY),img.clientHeight-box.offsetHeight))+'px';}if(resizing){var nw=Math.max(100,Math.min(startW+(e.clientX-startX),img.clientWidth-box.offsetLeft));var nh=Math.round(nw/aspectRatio);if(nh>img.clientHeight-box.offsetTop){nh=img.clientHeight-box.offsetTop;nw=Math.round(nh*aspectRatio);}box.style.width=nw+'px';box.style.height=nh+'px';}});
+    document.addEventListener('mouseup',function(){dragging=false;resizing=false;});
+    document.getElementById('coverCropConfirmBtn').addEventListener('click',function(){
+        var canvas=document.createElement('canvas');var scaleX=img.naturalWidth/img.clientWidth;var scaleY=img.naturalHeight/img.clientHeight;
+        var sx=box.offsetLeft*scaleX,sy=box.offsetTop*scaleY,sw=box.offsetWidth*scaleX,sh=box.offsetHeight*scaleY;
+        canvas.width=1280;canvas.height=350;var ctx=canvas.getContext('2d');ctx.drawImage(img,sx,sy,sw,sh,0,0,1280,350);
+        var url=canvas.toDataURL('image/jpeg',0.9);
+        group.coverPhoto=url;
+        if(!group.photos) group.photos={profile:[],cover:[]};
+        group.photos.cover.unshift({src:url,date:Date.now()});
+        banner.style.background='url('+url+') center/cover';
+        closeModal();
+    });
+}
 function showGroupProfileModal(person,group){
     var isFollowed=state.followedUsers[person.id];
     var myRole=getMyGroupRole(group);
     var myRank=roleRank(myRole);
     var theirRole=getPersonGroupRole(person,group);
     var theirRank=roleRank(theirRole);
+    var gc=getGroupThemeColor(group);
     var html='<div class="modal-header"><h3>Profile</h3><button class="modal-close"><i class="fas fa-times"></i></button></div>';
     html+='<div class="modal-body" style="padding:16px;">';
     html+='<div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;">';
     html+='<img src="https://i.pravatar.cc/80?img='+person.img+'" alt="'+person.name+'" style="width:56px;height:56px;border-radius:50%;object-fit:cover;flex-shrink:0;">';
     html+='<div><h3 style="font-size:16px;font-weight:600;margin:0;">'+person.name+'</h3><p style="font-size:13px;color:var(--gray);margin:2px 0 0;">'+person.bio+'</p>';
-    if(theirRole!=='Member') html+='<span style="font-size:10px;background:'+(theirRole==='Co-Admin'?'#8b5cf6':theirRole==='Moderator'?'var(--primary)':'#e74c3c')+';color:#fff;padding:1px 7px;border-radius:8px;display:inline-block;margin-top:3px;">'+theirRole+'</span>';
+    if(theirRole!=='Member') html+='<span style="font-size:10px;background:'+(theirRole==='Admin'?'#e74c3c':gc)+';color:#fff;padding:1px 7px;border-radius:8px;display:inline-block;margin-top:3px;">'+theirRole+'</span>';
     html+='</div></div>';
-    html+='<div style="display:flex;justify-content:center;gap:24px;padding:10px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin-bottom:12px;"><div class="stat"><span class="stat-count" style="font-size:15px;">'+Math.floor(Math.random()*500)+'</span><span class="stat-label" style="font-size:11px;">Following</span></div><div class="stat"><span class="stat-count" style="font-size:15px;">'+Math.floor(Math.random()*2000)+'</span><span class="stat-label" style="font-size:11px;">Followers</span></div></div>';
+    html+='<div style="display:flex;justify-content:center;gap:24px;padding:10px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin-bottom:12px;"><div class="stat"><span class="stat-count" style="font-size:15px;color:'+gc+';">'+Math.floor(Math.random()*500)+'</span><span class="stat-label" style="font-size:11px;">Following</span></div><div class="stat"><span class="stat-count" style="font-size:15px;color:'+gc+';">'+Math.floor(Math.random()*2000)+'</span><span class="stat-label" style="font-size:11px;">Followers</span></div></div>';
     html+='<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;">';
     html+='<button class="btn '+(isFollowed?'btn-disabled':'btn-green')+'" id="modalFollowBtn" data-uid="'+person.id+'" style="font-size:12px;padding:6px 12px;">'+(isFollowed?'<i class="fas fa-check"></i> Following':'<i class="fas fa-plus"></i> Follow')+'</button>';
-    html+='<button class="btn btn-primary" id="modalMsgBtn" data-uid="'+person.id+'" style="font-size:12px;padding:6px 12px;"><i class="fas fa-envelope"></i> Message</button>';
+    html+='<button class="btn btn-primary" id="modalMsgBtn" data-uid="'+person.id+'" style="font-size:12px;padding:6px 12px;background:'+gc+';border-color:'+gc+';"><i class="fas fa-envelope"></i> Message</button>';
     html+='<button class="btn btn-outline" id="modalViewProfileBtn" style="font-size:12px;padding:6px 12px;"><i class="fas fa-user"></i> View Profile</button>';
     // Role management buttons
     if(myRole==='Admin'){
         if(theirRole==='Member'){
-            html+='<button class="btn btn-outline" id="grpSetMod" style="font-size:12px;padding:6px 12px;"><i class="fas fa-shield-halved"></i> Make Mod</button>';
-            html+='<button class="btn btn-outline" id="grpSetCoAdmin" style="font-size:12px;padding:6px 12px;color:#8b5cf6;border-color:#8b5cf6;"><i class="fas fa-shield"></i> Co-Admin</button>';
+            html+='<button class="btn btn-outline" id="grpSetMod" style="font-size:12px;padding:6px 12px;color:'+gc+';border-color:'+gc+';"><i class="fas fa-shield-halved"></i> Make Mod</button>';
+            html+='<button class="btn btn-outline" id="grpSetCoAdmin" style="font-size:12px;padding:6px 12px;color:'+gc+';border-color:'+gc+';"><i class="fas fa-shield"></i> Co-Admin</button>';
         } else if(theirRole==='Moderator'){
-            html+='<button class="btn btn-outline" id="grpSetCoAdmin" style="font-size:12px;padding:6px 12px;color:#8b5cf6;border-color:#8b5cf6;"><i class="fas fa-shield"></i> Promote</button>';
+            html+='<button class="btn btn-outline" id="grpSetCoAdmin" style="font-size:12px;padding:6px 12px;color:'+gc+';border-color:'+gc+';"><i class="fas fa-shield"></i> Promote</button>';
             html+='<button class="btn btn-outline" id="grpRemoveRole" style="font-size:12px;padding:6px 12px;color:#e74c3c;border-color:#e74c3c;"><i class="fas fa-shield-halved"></i> Remove Mod</button>';
         } else if(theirRole==='Co-Admin'){
             html+='<button class="btn btn-outline" id="grpRemoveRole" style="font-size:12px;padding:6px 12px;color:#e74c3c;border-color:#e74c3c;"><i class="fas fa-shield"></i> Demote</button>';
@@ -1489,7 +1573,7 @@ function showGroupProfileModal(person,group){
             html+='<button class="btn btn-outline" id="grpTransferOwn" style="font-size:12px;padding:6px 12px;color:#f59e0b;border-color:#f59e0b;"><i class="fas fa-crown"></i> Transfer</button>';
         }
     } else if(myRole==='Co-Admin'){
-        if(theirRole==='Member') html+='<button class="btn btn-outline" id="grpSetMod" style="font-size:12px;padding:6px 12px;"><i class="fas fa-shield-halved"></i> Make Mod</button>';
+        if(theirRole==='Member') html+='<button class="btn btn-outline" id="grpSetMod" style="font-size:12px;padding:6px 12px;color:'+gc+';border-color:'+gc+';"><i class="fas fa-shield-halved"></i> Make Mod</button>';
         if(theirRole==='Moderator') html+='<button class="btn btn-outline" id="grpRemoveRole" style="font-size:12px;padding:6px 12px;color:#e74c3c;border-color:#e74c3c;"><i class="fas fa-shield-halved"></i> Remove Mod</button>';
     }
     html+='</div></div>';
@@ -1632,11 +1716,12 @@ function showGroupView(group){
     $$('.page').forEach(function(p){p.classList.remove('active');});
     document.getElementById('page-group-view').classList.add('active');
     $$('.nav-link').forEach(function(l){l.classList.remove('active');});
+    _navPrev=_navCurrent;_navCurrent='group-view';
     window.scrollTo(0,0);
 
     var joined=state.joinedGroups[group.id];
     var isOwner=group.createdBy==='me';
-    var themeColor=state.activeSkin&&skinColors[state.activeSkin]?skinColors[state.activeSkin].primary:group.color;
+    var themeColor=getGroupThemeColor(group);
     var banner=$('#gvCoverBanner');
     banner.style.background=group.coverPhoto?'url('+group.coverPhoto+') center/cover':themeColor;
     var coverBtn=$('#gvCoverEditBtn');
@@ -1734,7 +1819,9 @@ function showGroupView(group){
     for(var k=0;k<8;k++) renderInlineComments('gv-'+group.id+'-'+k);
     $('#gvPostCount').textContent=groupPosts.length+8;
 
-    // Mode tabs (Feed / Group Shop)
+    // Mode tabs (Feed / Group Shop) — remove old ones first to prevent duplicates
+    var _oldTabs=document.getElementById('gvModeTabs');if(_oldTabs)_oldTabs.remove();
+    var _oldShop=document.getElementById('gvShopSection');if(_oldShop)_oldShop.remove();
     var gvModeHtml='<div class="search-tabs" id="gvModeTabs">';
     gvModeHtml+='<button class="search-tab active" data-gvmode="feed"><i class="fas fa-stream"></i> Feed</button>';
     if(joined||isOwner) gvModeHtml+='<button class="search-tab" data-gvmode="shop"><i class="fas fa-store"></i> Group Shop</button>';
@@ -1819,20 +1906,81 @@ function showGroupView(group){
     });}
     // Cover photo edit for owned groups
     if(isOwner){
-        $('#gvCoverEditBtn').addEventListener('click',function(e){e.stopPropagation();$('#gvCoverFileInput').click();});
-        $('#gvCoverFileInput').addEventListener('change',function(){var f=this.files[0];if(!f)return;var r=new FileReader();r.onload=function(e){group.coverPhoto=e.target.result;banner.style.background='url('+e.target.result+') center/cover';};r.readAsDataURL(f);});
+        if(!group.photos) group.photos={profile:[],cover:[]};
+        $('#gvCoverEditBtn').addEventListener('click',function(e){
+            e.stopPropagation();
+            var photos=group.photos.cover;
+            var h='<div class="modal-header"><h3>Change Cover Photo</h3><button class="modal-close"><i class="fas fa-times"></i></button></div><div class="modal-body">';
+            h+='<div style="text-align:center;margin-bottom:16px;"><button class="btn btn-primary" id="gvCoverUploadNewBtn"><i class="fas fa-upload"></i> Upload New Photo</button></div>';
+            if(photos.length>0){
+                h+='<p style="font-size:13px;color:var(--gray);margin-bottom:12px;text-align:center;">Or select from previous uploads:</p>';
+                h+='<div class="shop-scroll-row" id="gvCoverPickRow" style="gap:12px;padding:8px 4px 12px;">';
+                photos.forEach(function(p,i){h+='<img src="'+p.src+'" class="gv-cover-pick-thumb" data-idx="'+i+'" style="min-width:140px;max-width:140px;height:50px;object-fit:cover;border-radius:8px;cursor:pointer;border:3px solid transparent;transition:border-color .2s;flex-shrink:0;scroll-snap-align:start;">';});
+                h+='</div>';
+            }
+            h+='</div>';
+            showModal(h);
+            if(photos.length>0) initDragScroll('#modalContent');
+            document.getElementById('gvCoverUploadNewBtn').addEventListener('click',function(){closeModal();$('#gvCoverFileInput').click();});
+            $$('.gv-cover-pick-thumb').forEach(function(thumb){
+                thumb.addEventListener('mouseenter',function(){thumb.style.borderColor='var(--primary)';});
+                thumb.addEventListener('mouseleave',function(){thumb.style.borderColor='transparent';});
+                thumb.addEventListener('click',function(){
+                    var src=photos[parseInt(thumb.dataset.idx)].src;
+                    group.coverPhoto=src;banner.style.background='url('+src+') center/cover';closeModal();
+                });
+            });
+        });
+        $('#gvCoverFileInput').addEventListener('change',function(){
+            var f=this.files[0];if(!f)return;
+            var r=new FileReader();
+            r.onload=function(e){showGroupCoverCropModal(e.target.result,group,banner);};
+            r.readAsDataURL(f);
+        });
         var iconBtn=document.getElementById('gvIconEditBtn');
         if(iconBtn){iconBtn.addEventListener('click',function(){
+            if(!group.photos) group.photos={profile:[],cover:[]};
             var icons=['fa-users','fa-camera-retro','fa-gamepad','fa-utensils','fa-dumbbell','fa-music','fa-paw','fa-plane-departure','fa-book','fa-leaf','fa-film','fa-hammer','fa-mug-hot','fa-code','fa-palette','fa-rocket','fa-heart','fa-star'];
+            var photos=group.photos.profile;
             var h='<div class="modal-header"><h3>Group Image</h3><button class="modal-close"><i class="fas fa-times"></i></button></div><div class="modal-body">';
-            h+='<button class="btn btn-primary btn-block" id="gvUploadPhotoBtn" style="margin-bottom:16px;"><i class="fas fa-upload"></i> Upload Photo</button>';
-            h+='<input type="file" id="gvModalImgInput" accept="image/*" style="display:none;">';
-            h+='<p style="text-align:center;color:var(--gray);font-size:13px;margin-bottom:12px;">Or pick an icon:</p>';
+            h+='<div style="text-align:center;margin-bottom:16px;"><button class="btn btn-primary" id="gvUploadPhotoBtn"><i class="fas fa-upload"></i> Upload New Photo</button></div>';
+            h+='<input type="file" id="gvModalImgInput" accept="image/*,image/gif" style="display:none;">';
+            if(photos.length>0){
+                h+='<p style="font-size:13px;color:var(--gray);margin-bottom:12px;text-align:center;">Or select from previous uploads:</p>';
+                h+='<div class="shop-scroll-row" id="gvProfilePickRow" style="gap:12px;padding:8px 4px 12px;">';
+                photos.forEach(function(p,i){h+='<img src="'+p.src+'" class="gv-profile-pick-thumb" data-idx="'+i+'" style="min-width:80px;max-width:80px;height:80px;object-fit:cover;border-radius:8px;cursor:pointer;border:3px solid transparent;transition:border-color .2s;flex-shrink:0;scroll-snap-align:start;">';});
+                h+='</div>';
+            }
+            h+='<p style="text-align:center;color:var(--gray);font-size:13px;margin:12px 0;">Or pick an icon:</p>';
             h+='<div class="gv-icon-grid">';
             icons.forEach(function(ic){h+='<button class="gv-icon-pick'+(group.icon===ic&&!group.profileImg?' active':'')+'" data-icon="'+ic+'"><i class="fas '+ic+'"></i></button>';});
             h+='</div></div>';showModal(h);
+            if(photos.length>0) initDragScroll('#modalContent');
             document.getElementById('gvUploadPhotoBtn').addEventListener('click',function(){document.getElementById('gvModalImgInput').click();});
-            document.getElementById('gvModalImgInput').addEventListener('change',function(){var f=this.files[0];if(!f)return;var r=new FileReader();r.onload=function(e){group.profileImg=e.target.result;closeModal();showGroupView(group);renderGroups();};r.readAsDataURL(f);});
+            document.getElementById('gvModalImgInput').addEventListener('change',function(){
+                var f=this.files[0];if(!f)return;
+                var isGif=f.type==='image/gif';
+                var r=new FileReader();
+                r.onload=function(e){
+                    if(isGif){
+                        group.profileImg=e.target.result;
+                        if(!group.photos) group.photos={profile:[],cover:[]};
+                        group.photos.profile.unshift({src:e.target.result,date:Date.now()});
+                        closeModal();showGroupView(group);renderGroups();
+                    } else {
+                        showGroupProfileCropModal(e.target.result,group);
+                    }
+                };
+                r.readAsDataURL(f);
+            });
+            $$('.gv-profile-pick-thumb').forEach(function(thumb){
+                thumb.addEventListener('mouseenter',function(){thumb.style.borderColor='var(--primary)';});
+                thumb.addEventListener('mouseleave',function(){thumb.style.borderColor='transparent';});
+                thumb.addEventListener('click',function(){
+                    var src=photos[parseInt(thumb.dataset.idx)].src;
+                    group.profileImg=src;closeModal();showGroupView(group);renderGroups();
+                });
+            });
             $$('.gv-icon-pick').forEach(function(btn){btn.addEventListener('click',function(){group.icon=btn.dataset.icon;delete group.profileImg;closeModal();showGroupView(group);renderGroups();});});
         });}
     }
@@ -2621,9 +2769,16 @@ function renderTrendingSidebar(){
 }
 
 // ======================== GROUPS PAGE ========================
+function getGroupBannerBg(g){
+    var ps=state.groupActivePremiumSkin[g.id];if(ps){var sk=premiumSkins.find(function(s){return s.id===ps;});if(sk)return sk.preview;}
+    var bs=state.groupActiveSkin[g.id];if(bs&&groupSkinBanners[bs])return groupSkinBanners[bs];
+    return g.color;
+}
 function groupCardHtml(g){
     var joined=state.joinedGroups[g.id];
-    return '<div class="group-card" data-gid="'+g.id+'"><div class="group-card-banner" style="background:'+g.color+';"><i class="fas '+g.icon+'"></i></div><div class="group-card-body"><h4>'+g.name+'</h4><p>'+g.desc+'</p><span class="group-members"><i class="fas fa-users"></i> '+fmtNum(g.members)+' members</span></div><div class="group-card-actions"><button class="btn '+(joined?'btn-disabled':'btn-primary')+' join-group-btn" data-gid="'+g.id+'">'+(joined?'Joined':'Join')+'</button><button class="btn btn-outline view-group-btn" data-gid="'+g.id+'">View</button></div></div>';
+    var isOwner=g.createdBy==='me';
+    var bg=getGroupBannerBg(g);
+    return '<div class="group-card" data-gid="'+g.id+'"><div class="group-card-banner" style="background:'+bg+';">'+(isOwner?'<button class="gc-icon-edit-btn" data-gid="'+g.id+'" title="Change Icon"><i class="fas fa-pen"></i></button>':'')+'<i class="fas '+g.icon+'"></i></div><div class="group-card-body"><h4>'+g.name+'</h4><p>'+g.desc+'</p><span class="group-members"><i class="fas fa-users"></i> '+fmtNum(g.members)+' members</span></div><div class="group-card-actions"><button class="btn '+(joined?'btn-disabled':'btn-primary')+' join-group-btn" data-gid="'+g.id+'">'+(joined?'Joined':'Join')+'</button><button class="btn btn-outline view-group-btn" data-gid="'+g.id+'">View</button></div></div>';
 }
 var currentGroupTab=null;
 function getGroupCategories(filter){
@@ -2688,6 +2843,19 @@ function bindGroupEvents(container){
             var gid=parseInt(card.getAttribute('data-gid'));
             var group=groups.find(function(g){return g.id===gid;});
             if(group) showGroupView(group);
+        });
+    });
+    $$(container+' .gc-icon-edit-btn').forEach(function(btn){
+        btn.addEventListener('click',function(e){
+            e.stopPropagation();
+            var gid=parseInt(btn.getAttribute('data-gid'));
+            var group=groups.find(function(g){return g.id===gid;});
+            if(!group) return;
+            var icons=['fa-users','fa-camera-retro','fa-gamepad','fa-utensils','fa-dumbbell','fa-music','fa-paw','fa-plane-departure','fa-book','fa-leaf','fa-film','fa-hammer','fa-mug-hot','fa-code','fa-palette','fa-rocket','fa-heart','fa-star','fa-fire','fa-bolt','fa-globe','fa-trophy','fa-gem','fa-shield'];
+            var h='<div class="modal-header"><h3>Change Icon</h3><button class="modal-close"><i class="fas fa-times"></i></button></div><div class="modal-body"><div class="gv-icon-grid">';
+            icons.forEach(function(ic){h+='<button class="gv-icon-pick'+(group.icon===ic?' active':'')+'" data-icon="'+ic+'"><i class="fas '+ic+'"></i></button>';});
+            h+='</div></div>';showModal(h);
+            $$('.gv-icon-pick').forEach(function(pick){pick.addEventListener('click',function(){group.icon=pick.dataset.icon;delete group.profileImg;closeModal();renderGroups();});});
         });
     });
 }
@@ -2847,7 +3015,7 @@ function getGroupShopCategories(groupId){
         return '<div class="skin-card"><div class="skin-preview" style="background:'+s.preview+';"><div class="skin-preview-inner" style="color:'+s.cardText+';background:'+s.cardBg+';">Guild</div></div><div class="skin-card-body" style="background:'+s.cardBg+';"><h4 style="color:'+s.cardText+';">'+s.name+'</h4><p style="color:'+s.cardMuted+';">'+s.desc+'</p>'+groupShopBuy(groupId,state.groupOwnedSkins[groupId][s.id],s.price,'buy-gskin-btn','data-sid="'+s.id+'" data-gid="'+groupId+'"')+'</div></div>';
     }});
 
-    // Apply Skins tab (only if group owns skins)
+    // Apply Skins tab (always visible)
     var ownedBasic=skins.filter(function(s){return state.groupOwnedSkins[groupId][s.id];});
     var ownedGuild=guildSkins.filter(function(s){return state.groupOwnedSkins[groupId][s.id];});
     var ownedPrem=premiumSkins.filter(function(s){return state.groupOwnedPremiumSkins[groupId][s.id];});
@@ -2861,6 +3029,10 @@ function getGroupShopCategories(groupId){
             var descStyle=s.cardMuted?'color:'+s.cardMuted+';':'';
             var inner=isPremium?'<div class="premium-preview-frame" style="background:'+s.border+';"><img src="https://i.pravatar.cc/60?img=12" class="premium-preview-avatar"></div>':'<div class="skin-preview-inner" style="color:#333;background:#fff;">Preview</div>';
             return '<div class="skin-card"><div class="skin-preview" style="background:'+s.preview+';">'+inner+'</div><div class="skin-card-body" style="'+bodyStyle+'"><h4 style="'+titleStyle+'">'+(s.icon?'<i class="fas '+s.icon+'" style="color:'+s.iconColor+';margin-right:6px;"></i>':'')+s.name+'</h4><p style="'+descStyle+'">'+s.desc+'</p><button class="btn '+(isActive?'btn-disabled':'btn-primary')+' apply-gskin-btn" data-sid="'+s.id+'" data-gid="'+groupId+'" data-premium="'+(isPremium?'1':'0')+'">'+(isActive?'Active':'Apply')+'</button></div></div>';
+        }});
+    } else {
+        cats.push({key:'owned',label:'<i class="fas fa-check-circle"></i> Apply Skins',items:[null],render:function(){
+            return '<div style="padding:24px;text-align:center;color:var(--muted);width:100%;"><i class="fas fa-palette" style="font-size:2rem;margin-bottom:8px;display:block;opacity:.4;"></i>No skins owned yet.<br>Purchase skins from the other tabs to apply them here.</div>';
         }});
     }
 
@@ -2919,7 +3091,7 @@ function renderGroupShop(groupId){
         var isPremium=btn.getAttribute('data-premium')==='1';
         if(isPremium){state.groupActivePremiumSkin[gid]=sid;state.groupActiveSkin[gid]=null;}
         else{state.groupActiveSkin[gid]=sid;state.groupActivePremiumSkin[gid]=null;}
-        applyGroupSkin(gid);renderGroupShop(gid);
+        applyGroupSkin(gid);renderGroupShop(gid);renderGroups();
     });});
 
     initDragScroll('#gvShopContent');
@@ -2968,25 +3140,42 @@ var groupSkinBanners={
 function applyGroupSkin(groupId){
     var gvPage=document.getElementById('page-group-view');
     var banner=document.getElementById('gvCoverBanner');
+    var profileCover=gvPage.querySelector('.profile-cover');
+    var iconWrap=gvPage.querySelector('.gv-icon-wrap');
     var grp=groups.find(function(g){return g.id===groupId;});
     var hasCover=grp&&grp.coverPhoto;
+    // Save personal skin state once when entering group view
+    if(!_gvSaved) _gvSaved={skin:state.activeSkin,premiumSkin:state.activePremiumSkin,bgImage:premiumBgImage,bgSat:premiumBgSaturation};
+    // Hide premium bg in group view
+    var _bgLayer=document.getElementById('premiumBgLayer');if(_bgLayer)_bgLayer.classList.remove('active');
+    // Clear group-specific classes
     skins.forEach(function(s){gvPage.classList.remove('gskin-'+s.id);});
     guildSkins.forEach(function(s){gvPage.classList.remove('gskin-'+s.id);});
     premiumSkins.forEach(function(s){gvPage.classList.remove('gpremium-'+s.id);});
     gvPage.classList.remove('gpremium-dark');
     gvPage.style.background='';
     if(banner&&!hasCover) banner.style.background='';
+    if(profileCover) profileCover.style.background='';
     var activePremium=state.groupActivePremiumSkin[groupId];
     var activeBasic=state.groupActiveSkin[groupId];
+    if(iconWrap) iconWrap.style.background=activePremium||activeBasic?'':'var(--primary)';
     if(activePremium){
         var skin=premiumSkins.find(function(s){return s.id===activePremium;});
         if(skin){gvPage.classList.add('gpremium-'+activePremium);if(skin.dark)gvPage.classList.add('gpremium-dark');}
         gvPage.style.background=skin&&skin.dark?'#0f172a':'#f0f0f0';
         if(banner&&!hasCover) banner.style.background=skin&&skin.dark?'#0f172a':'';
+        if(profileCover) profileCover.style.background=skin?skin.preview:'';
+        if(iconWrap) iconWrap.style.background=skin?skin.accent:'';
+        applyPremiumSkin(activePremium,true);
     } else if(activeBasic){
         gvPage.classList.add('gskin-'+activeBasic);
         gvPage.style.background=groupSkinBgs[activeBasic]||'';
         if(banner&&!hasCover) banner.style.background=groupSkinBanners[activeBasic]||'';
+        if(profileCover) profileCover.style.background=groupSkinBanners[activeBasic]||'';
+        if(iconWrap){var sc=skinColors[activeBasic];iconWrap.style.background=sc?sc.primary:(grp?grp.color:'');}
+        applySkin(activeBasic,true);
+    } else {
+        applySkin(null,true);
     }
 }
 
@@ -3001,7 +3190,15 @@ var skinColors={
     slate:{primary:'#78909c',hover:'#607d8b',navBg:'#37474f'},
     ember:{primary:'#e64a19',hover:'#bf360c',navBg:'#bf360c',light:true},
     arctic:{primary:'#00acc1',hover:'#00838f',navBg:'#00838f',light:true},
-    moss:{primary:'#689f38',hover:'#558b2f',navBg:'#558b2f',light:true}
+    moss:{primary:'#689f38',hover:'#558b2f',navBg:'#558b2f',light:true},
+    'guild-banner':{primary:'#DAA520',hover:'#8B4513',navBg:'#8B4513',light:true},
+    'guild-fortress':{primary:'#7a7a7a',hover:'#4a4a4a',navBg:'#4a4a4a',light:true},
+    'guild-dragon':{primary:'#ff4500',hover:'#8b0000',navBg:'#8b0000'},
+    'guild-enchanted':{primary:'#2d8659',hover:'#1a472a',navBg:'#1a472a',light:true},
+    'guild-ocean':{primary:'#2980b9',hover:'#1a3a5c',navBg:'#1a3a5c',light:true},
+    'guild-celestial':{primary:'#b388ff',hover:'#4a0080',navBg:'#1a1a3e'},
+    'guild-steampunk':{primary:'#b87333',hover:'#5c3a1e',navBg:'#5c3a1e',light:true},
+    'guild-frost':{primary:'#00bcd4',hover:'#0a2a4a',navBg:'#0a2a4a',light:true}
 };
 
 function setThemeVars(light){
@@ -3026,7 +3223,7 @@ function applySkin(skinId,silent){
     document.body.classList.remove('premium-dark');
     var avatars=document.querySelectorAll('#profileAvatarImg, .pv-profile-card .profile-avatar, .nav-avatar');
     avatars.forEach(function(av){av.classList.remove('premium-border');av.removeAttribute('data-premium');});
-    state.activePremiumSkin=null;
+    if(!silent){state.activePremiumSkin=null;updatePremiumBg();}
     if(skinId&&skinId!=='default'){
         card.classList.add('skin-'+skinId);
         document.body.classList.add('skin-'+skinId);
@@ -3096,6 +3293,24 @@ function applyNavStyle(nsId){
     else{state.activeNavStyle=null;}
 }
 
+// Premium background (runtime only, no persistence)
+var premiumBgImage=null;
+var premiumBgSaturation=100;
+
+function updatePremiumBg(){
+    var layer=document.getElementById('premiumBgLayer');
+    if(!layer)return;
+    if(premiumBgImage&&state.activePremiumSkin){
+        layer.style.backgroundImage='url('+premiumBgImage+')';
+        layer.style.filter='saturate('+premiumBgSaturation+'%)';
+        layer.classList.add('active');
+    } else {
+        layer.style.backgroundImage='';
+        layer.style.filter='';
+        layer.classList.remove('active');
+    }
+}
+
 function applyPremiumSkin(skinId,silent){
     var root=document.documentElement;var card=$('#profileCard');
     // Clear all premium classes
@@ -3106,7 +3321,7 @@ function applyPremiumSkin(skinId,silent){
     if(skinId&&skinId!=='default'){
         // Clear basic skin first
         skins.forEach(function(s){card.classList.remove('skin-'+s.id);document.body.classList.remove('skin-'+s.id);});
-        state.activeSkin=null;
+        if(!silent)state.activeSkin=null;
         // Apply premium
         var skin=premiumSkins.find(function(s){return s.id===skinId;});
         document.body.classList.add('premium-'+skinId);
@@ -3116,8 +3331,10 @@ function applyPremiumSkin(skinId,silent){
         root.style.setProperty('--nav-bg',skin.accent);
         avatars.forEach(function(av){av.classList.add('premium-border');av.setAttribute('data-premium',skinId);});
         if(!silent){state.activePremiumSkin=skinId;addNotification('skin','You applied the "'+skin.name+'" premium skin!');}
+        updatePremiumBg();
     } else {
         if(!silent) state.activePremiumSkin=null;
+        updatePremiumBg();
         applySkin(state.activeSkin,true);
     }
 }
@@ -3159,7 +3376,49 @@ function renderMySkins(){
     if(active.defaultCard) html+=active.defaultCard;
     active.items.forEach(function(item){html+=active.render(item);});
     html+='</div>';
+    // Premium background controls (only on premium tab with active premium skin)
+    if(currentMySkinsTab==='premium'&&state.activePremiumSkin){
+        var bgHtml='<div class="premium-bg-controls" style="margin-top:16px;padding:16px;background:var(--card);border-radius:12px;box-shadow:var(--shadow);">';
+        bgHtml+='<h4 style="margin-bottom:10px;font-size:14px;"><i class="fas fa-image" style="margin-right:6px;color:var(--primary);"></i>Background Image</h4>';
+        bgHtml+='<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">';
+        bgHtml+='<label class="btn btn-primary" style="cursor:pointer;font-size:13px;"><i class="fas fa-upload" style="margin-right:6px;"></i>Upload<input type="file" id="premiumBgUpload" accept="image/*" style="display:none;"></label>';
+        if(premiumBgImage){
+            bgHtml+='<button class="btn" id="premiumBgRemove" style="font-size:13px;background:var(--border);color:var(--dark);"><i class="fas fa-trash" style="margin-right:6px;"></i>Remove</button>';
+            bgHtml+='<img src="'+premiumBgImage+'" style="width:48px;height:48px;object-fit:cover;border-radius:6px;border:2px solid var(--border);">';
+        }
+        bgHtml+='</div>';
+        if(premiumBgImage){
+            bgHtml+='<div style="margin-top:12px;">';
+            bgHtml+='<label style="font-size:12px;color:var(--gray);display:flex;align-items:center;gap:8px;"><i class="fas fa-sliders"></i>Saturation: <span id="satValLabel">'+premiumBgSaturation+'%</span></label>';
+            bgHtml+='<input type="range" id="premiumBgSatSlider" min="0" max="200" value="'+premiumBgSaturation+'" style="width:100%;margin-top:6px;accent-color:var(--primary);">';
+            bgHtml+='</div>';
+        }
+        bgHtml+='</div>';
+        html+=bgHtml;
+    }
     $('#mySkinsGrid').innerHTML=html;
+    // Premium bg upload handler
+    var bgUploadInput=document.getElementById('premiumBgUpload');
+    if(bgUploadInput){
+        bgUploadInput.addEventListener('change',function(){
+            var file=bgUploadInput.files[0];if(!file)return;
+            var reader=new FileReader();
+            reader.onload=function(e){premiumBgImage=e.target.result;updatePremiumBg();renderMySkins();};
+            reader.readAsDataURL(file);
+        });
+    }
+    var bgRemoveBtn=document.getElementById('premiumBgRemove');
+    if(bgRemoveBtn){
+        bgRemoveBtn.addEventListener('click',function(){premiumBgImage=null;premiumBgSaturation=100;updatePremiumBg();renderMySkins();});
+    }
+    var satSlider=document.getElementById('premiumBgSatSlider');
+    if(satSlider){
+        satSlider.addEventListener('input',function(){
+            premiumBgSaturation=parseInt(satSlider.value);
+            document.getElementById('satValLabel').textContent=premiumBgSaturation+'%';
+            updatePremiumBg();
+        });
+    }
     function mySkinsRerender(){var row=$('#mySkinsGrid .shop-scroll-row');var sl=row?row.scrollLeft:0;renderMySkins();var row2=$('#mySkinsGrid .shop-scroll-row');if(row2)row2.scrollLeft=sl;}
     $$('#mySkinsGrid .apply-skin-btn').forEach(function(btn){btn.addEventListener('click',function(){applySkin(btn.dataset.sid==='default'?null:btn.dataset.sid);mySkinsRerender();});});
     $$('#mySkinsGrid .apply-font-btn').forEach(function(btn){btn.addEventListener('click',function(){applyFont(btn.dataset.fid==='default'?null:btn.dataset.fid);mySkinsRerender();});});
@@ -3313,7 +3572,7 @@ function renderPhotoAlbum(){
     });
 }
 $('#viewAllPhotos').addEventListener('click',function(e){e.preventDefault();renderPhotoAlbum();navigateTo('photos');});
-$$('.photos-back-link').forEach(function(l){l.addEventListener('click',function(e){e.preventDefault();navigateTo('home');});});
+$$('.photos-back-link').forEach(function(l){l.addEventListener('click',function(e){e.preventDefault();navigateTo(_navPrev&&_navPrev!=='photos'?_navPrev:'home');});});
 
 // ======================== SAVE POST MODAL ========================
 function showSaveModal(pid){
@@ -3448,11 +3707,10 @@ function blockUser(uid){
     // Unfollow them if following
     if(state.followedUsers[uid]){
         delete state.followedUsers[uid];
-        state.following--;
     }
     // Remove from my followers
     var idx=myFollowers.indexOf(uid);
-    if(idx!==-1){myFollowers.splice(idx,1);state.followers--;}
+    if(idx!==-1){myFollowers.splice(idx,1);}
     updateFollowCounts();
     renderFeed(activeFeedTab);
     showToast('User blocked');
