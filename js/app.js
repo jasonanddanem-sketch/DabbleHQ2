@@ -142,6 +142,18 @@ var state = {
 // Pre-follow 15 users and pre-join groups (persists as hardcoded init)
 (function(){for(var i=1;i<=15;i++){state.followedUsers[i]=true;}state.following=15;state.joinedGroups[13]=true;state.joinedGroups[1]=true;state.joinedGroups[3]=true;})();
 
+function getMyAvatar(){return $('#profileAvatarImg').src;}
+function syncAllAvatars(newSrc){
+    var old=$('#profileAvatarImg').src;
+    $('#profileAvatarImg').src=newSrc;$('.nav-avatar').src=newSrc;$('.post-create-avatar').src=newSrc;
+    document.querySelectorAll('img').forEach(function(img){
+        if(img.src===old||/pravatar\.cc\/\d+\?img=12$/.test(img.src)) img.src=newSrc;
+    });
+    Object.keys(state.groupPosts).forEach(function(gid){
+        state.groupPosts[gid].forEach(function(p){if(p.avatar===old) p.avatar=newSrc;});
+    });
+}
+
 // ======================== SAVED / HIDDEN / REPORTS (localStorage) ========================
 var savedFolders=JSON.parse(localStorage.getItem('dq_savedFolders')||'[{"id":"fav","name":"Favorites","posts":[]}]');
 var hiddenPosts=JSON.parse(localStorage.getItem('dq_hiddenPosts')||'{}');
@@ -829,7 +841,7 @@ function handleShare(btn){
         var comment=document.getElementById('shareComment').value.trim();
         var container=$('#feedContainer');
         var postId='share-'+Date.now();
-        var ph='<div class="card feed-post"><div class="post-header"><img src="https://i.pravatar.cc/50?img=12" alt="You" class="post-avatar">';
+        var ph='<div class="card feed-post"><div class="post-header"><img src="'+getMyAvatar()+'" alt="You" class="post-avatar">';
         ph+='<div class="post-user-info"><div class="post-user-top"><h4 class="post-username">John Doe</h4><span class="post-time">just now</span></div>';
         ph+='<div class="post-badges"><span class="badge badge-green"><i class="fas fa-share"></i> Shared</span></div></div></div>';
         if(comment) ph+='<div class="post-description"><p>'+comment.replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</p></div>';
@@ -1123,7 +1135,7 @@ function showProfileModal(person){
 
 function showMyProfileModal(){
     var html='<div class="modal-header"><h3>My Profile</h3><button class="modal-close"><i class="fas fa-times"></i></button></div>';
-    html+='<div class="modal-body"><div class="modal-profile-top"><img src="https://i.pravatar.cc/80?img=12" alt="John Doe"><h3>John Doe</h3><p>Living my best life</p></div>';
+    html+='<div class="modal-body"><div class="modal-profile-top"><img src="'+getMyAvatar()+'" alt="John Doe"><h3>John Doe</h3><p>Living my best life</p></div>';
     html+='<div class="modal-profile-stats"><div class="stat"><span class="stat-count">'+state.following+'</span><span class="stat-label">Following</span></div><div class="stat"><span class="stat-count">'+state.followers+'</span><span class="stat-label">Followers</span></div></div>';
     html+='<div style="text-align:center;"><p style="color:#777;font-size:13px;">Active Skin: '+(state.activeSkin?skins.find(function(s){return s.id===state.activeSkin;}).name:'Default')+'</p></div>';
     html+='<div class="modal-actions" style="margin-top:16px;"><button class="btn btn-outline" id="modalViewMyProfileBtn"><i class="fas fa-user"></i> View Profile</button></div></div>';
@@ -1937,9 +1949,7 @@ $('#avatarEditBtn').addEventListener('click',function(e){
         thumb.addEventListener('mouseleave',function(){thumb.style.borderColor='transparent';});
         thumb.addEventListener('click',function(){
             var src=photos[parseInt(thumb.dataset.idx)].src;
-            $('#profileAvatarImg').src=src;
-            $('.nav-avatar').src=src;
-            $('.post-create-avatar').src=src;
+            syncAllAvatars(src);
             closeModal();
         });
     });
@@ -1952,9 +1962,7 @@ $('#avatarFileInput').addEventListener('change',function(){
     reader.onload=function(e){
         if(isGif){
             var url=e.target.result;
-            $('#profileAvatarImg').src=url;
-            $('.nav-avatar').src=url;
-            $('.post-create-avatar').src=url;
+            syncAllAvatars(url);
             state.photos.profile.unshift({src:url,date:Date.now()});
             renderPhotosCard();
         } else {
@@ -2014,9 +2022,7 @@ function showCropModal(src){
         var ctx=canvas.getContext('2d');
         ctx.drawImage(img,sx,sy,sw,sh,0,0,400,400);
         var url=canvas.toDataURL('image/png');
-        $('#profileAvatarImg').src=url;
-        $('.nav-avatar').src=url;
-        $('.post-create-avatar').src=url;
+        syncAllAvatars(url);
         state.photos.profile.unshift({src:url,date:Date.now()});
         renderPhotosCard();
         closeModal();
@@ -2384,7 +2390,7 @@ $('#openPostModal').addEventListener('click',function(){
             if(linkDesc){linkHtml+='<div class="link-preview-desc">'+linkDesc+'</div>';}
             linkHtml+='</div></a>';
         }
-        var postHtml='<div class="card feed-post"><div class="post-header"><img src="https://i.pravatar.cc/50?img=12" alt="You" class="post-avatar">';
+        var postHtml='<div class="card feed-post"><div class="post-header"><img src="'+getMyAvatar()+'" alt="You" class="post-avatar">';
         postHtml+='<div class="post-user-info"><div class="post-user-top"><h4 class="post-username">John Doe</h4><span class="post-time">just now</span></div>';
         postHtml+='<div class="post-badges"><span class="badge badge-green"><i class="fas fa-user"></i> You</span></div></div></div>';
         var tagsHtml='';
