@@ -148,7 +148,7 @@ var state = {
     groupReplyCoinPosts: {}
 };
 // Pre-follow 15 users and pre-join groups (persists as hardcoded init)
-(function(){for(var i=1;i<=15;i++){state.followedUsers[i]=true;}state.joinedGroups[13]=true;state.joinedGroups[1]=true;state.joinedGroups[3]=true;})();
+(function(){for(var i=1;i<=15;i++){state.followedUsers[i]=true;}state.joinedGroups[13]=true;state.joinedGroups[1]=true;state.joinedGroups[3]=true;for(var g=1;g<=13;g++){state.groupCoins[g]=5000;}})();
 
 function getMyAvatar(){return $('#profileAvatarImg').src;}
 function syncAllAvatars(newSrc){
