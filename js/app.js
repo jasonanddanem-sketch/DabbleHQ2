@@ -137,7 +137,15 @@ var state = {
     photos:{profile:[],cover:[],post:[],albums:[]},
     postCoinCount: 0,
     commentCoinPosts: {},
-    replyCoinPosts: {}
+    replyCoinPosts: {},
+    groupCoins: {},
+    groupOwnedSkins: {},
+    groupOwnedPremiumSkins: {},
+    groupActiveSkin: {},
+    groupActivePremiumSkin: {},
+    groupPostCoinCount: {},
+    groupCommentCoinPosts: {},
+    groupReplyCoinPosts: {}
 };
 // Pre-follow 15 users and pre-join groups (persists as hardcoded init)
 (function(){for(var i=1;i<=15;i++){state.followedUsers[i]=true;}state.following=15;state.joinedGroups[13]=true;state.joinedGroups[1]=true;state.joinedGroups[3]=true;})();
@@ -388,20 +396,25 @@ var skins = [
 ];
 
 var fonts = [
-    {id:'orbitron',name:'Orbitron',desc:'Futuristic sci-fi vibes.',price:1,family:'Orbitron'},
+    {id:'orbitron',name:'Orbitron',desc:'Futuristic sci-fi vibes.',price:1,family:'Orbitron',scale:.92},
     {id:'rajdhani',name:'Rajdhani',desc:'Clean tech aesthetic.',price:1,family:'Rajdhani'},
     {id:'quicksand',name:'Quicksand',desc:'Soft and rounded.',price:1,family:'Quicksand'},
-    {id:'pacifico',name:'Pacifico',desc:'Fun handwritten script.',price:1,family:'Pacifico'},
+    {id:'pacifico',name:'Pacifico',desc:'Fun handwritten script.',price:1,family:'Pacifico',scale:.85},
     {id:'baloo',name:'Baloo 2',desc:'Bubbly and adorable.',price:1,family:'Baloo 2'},
     {id:'playfair',name:'Playfair Display',desc:'Elegant serif style.',price:1,family:'Playfair Display'},
     {id:'spacegrotesk',name:'Space Grotesk',desc:'Modern geometric sans.',price:1,family:'Space Grotesk'},
-    {id:'caveat',name:'Caveat',desc:'Casual handwriting feel.',price:1,family:'Caveat'},
+    {id:'caveat',name:'Caveat',desc:'Casual handwriting feel.',price:1,family:'Caveat',scale:.9},
     {id:'archivo',name:'Archivo',desc:'Sharp and editorial.',price:1,family:'Archivo'},
-    {id:'silkscreen',name:'Silkscreen',desc:'Retro pixel vibes.',price:1,family:'Silkscreen'}
+    {id:'silkscreen',name:'Silkscreen',desc:'Retro pixel vibes.',price:1,family:'Silkscreen',scale:.78},
+    {id:'pressstart',name:'Press Start 2P',desc:'Arcade pixel font.',price:1,family:'Press Start 2P',scale:.55},
+    {id:'righteous',name:'Righteous',desc:'Bold retro display.',price:1,family:'Righteous',scale:.9},
+    {id:'satisfy',name:'Satisfy',desc:'Smooth cursive flow.',price:1,family:'Satisfy',scale:.88},
+    {id:'bungee',name:'Bungee',desc:'Chunky display type.',price:1,family:'Bungee',scale:.72},
+    {id:'monoton',name:'Monoton',desc:'Neon outline glow.',price:1,family:'Monoton',scale:.68}
 ];
 
 var logos = [
-    {id:'twdl',name:'TWDL',desc:'Minimal and edgy.',price:1,text:'TWDL'},
+    {id:'dq',name:'DQ',desc:'Minimal and edgy.',price:1,text:'DQ'},
     {id:'electric',name:'Electric',desc:'High energy vibes.',price:1,text:'\u26A1DabbleHQ'},
     {id:'sparkle',name:'Sparkle',desc:'Fancy and elegant.',price:1,text:'\u2726DabbleHQ\u2726'},
     {id:'floral',name:'Floral',desc:'Soft flower energy.',price:1,text:'\uD83C\uDF38DabbleHQ'},
@@ -409,8 +422,13 @@ var logos = [
     {id:'crown',name:'Crown',desc:'Royal and majestic.',price:1,text:'\uD83D\uDC51DabbleHQ'},
     {id:'wave',name:'Wave',desc:'Chill ocean flow.',price:1,text:'\uD83C\uDF0ADabbleHQ'},
     {id:'rocket',name:'Rocket',desc:'Launch into orbit.',price:1,text:'\uD83D\uDE80DabbleHQ'},
-    {id:'gem',name:'Diamond',desc:'Rare and precious.',price:1,text:'\uD83D\uDC8ETG\uD83D\uDC8E'},
-    {id:'minimal',name:'Minimal',desc:'Less is more.',price:1,text:'tg.'}
+    {id:'gem',name:'Diamond',desc:'Rare and precious.',price:1,text:'\uD83D\uDC8EDQ\uD83D\uDC8E'},
+    {id:'minimal',name:'Minimal',desc:'Less is more.',price:1,text:'dq.'},
+    {id:'fire',name:'Fire',desc:'Blazing hot energy.',price:1,text:'\uD83D\uDD25DabbleHQ'},
+    {id:'star',name:'Starlight',desc:'Shine bright always.',price:1,text:'\u2B50DabbleHQ\u2B50'},
+    {id:'ghost',name:'Ghost',desc:'Spooky and playful.',price:1,text:'\uD83D\uDC7BDabbleHQ'},
+    {id:'neon',name:'Neon',desc:'Glowing club vibes.',price:1,text:'\uD83D\uDCA0DQ\uD83D\uDCA0'},
+    {id:'sword',name:'Sword',desc:'Battle-ready branding.',price:1,text:'\u2694\uFE0FDabbleHQ\u2694\uFE0F'}
 ];
 
 var defaultIcons={home:'fa-home',groups:'fa-users-rectangle',skins:'fa-palette',profiles:'fa-user-group',shop:'fa-store',messages:'fa-envelope',notifications:'fa-bell',like:'fa-thumbs-up',dislike:'fa-thumbs-down',comment:'fa-comment',share:'fa-share-from-square',search:'fa-search',edit:'fa-pen',bookmark:'fa-bookmark',heart:'fa-heart'};
@@ -425,7 +443,12 @@ var iconSets = [
     {id:'ocean',name:'Ocean',desc:'Deep sea aquatic icons.',price:1,preview:'linear-gradient(135deg,#006994,#00CED1)',icons:{home:'fa-anchor',groups:'fa-fish',skins:'fa-water',profiles:'fa-person-swimming',shop:'fa-ship',messages:'fa-bottle-water',notifications:'fa-otter',like:'fa-thumbs-up',dislike:'fa-thumbs-down',comment:'fa-comment-dots',share:'fa-share-from-square',search:'fa-magnifying-glass',edit:'fa-pen',bookmark:'fa-life-ring',heart:'fa-shrimp'}},
     {id:'retro',name:'Retro',desc:'80s throwback vibes.',price:1,preview:'linear-gradient(135deg,#ff6ec7,#7873f5)',icons:{home:'fa-tv',groups:'fa-compact-disc',skins:'fa-spray-can',profiles:'fa-user-secret',shop:'fa-record-vinyl',messages:'fa-phone',notifications:'fa-radio',like:'fa-thumbs-up',dislike:'fa-thumbs-down',comment:'fa-comments',share:'fa-share-nodes',search:'fa-magnifying-glass',edit:'fa-scissors',bookmark:'fa-floppy-disk',heart:'fa-gamepad'}},
     {id:'food',name:'Foodie',desc:'Tasty food-themed icons.',price:1,preview:'linear-gradient(135deg,#ff9a44,#fc6076)',icons:{home:'fa-house-chimney',groups:'fa-utensils',skins:'fa-ice-cream',profiles:'fa-mug-hot',shop:'fa-cart-shopping',messages:'fa-cookie-bite',notifications:'fa-lemon',like:'fa-thumbs-up',dislike:'fa-thumbs-down',comment:'fa-comment-dots',share:'fa-share-from-square',search:'fa-magnifying-glass',edit:'fa-pen',bookmark:'fa-pizza-slice',heart:'fa-candy-cane'}},
-    {id:'weather',name:'Weather',desc:'Atmospheric sky icons.',price:1,preview:'linear-gradient(135deg,#89CFF0,#FFD700)',icons:{home:'fa-cloud-sun',groups:'fa-tornado',skins:'fa-rainbow',profiles:'fa-snowman',shop:'fa-umbrella',messages:'fa-snowflake',notifications:'fa-bolt-lightning',like:'fa-thumbs-up',dislike:'fa-thumbs-down',comment:'fa-comment-dots',share:'fa-wind',search:'fa-temperature-half',edit:'fa-droplet',bookmark:'fa-sun',heart:'fa-cloud-moon'}}
+    {id:'weather',name:'Weather',desc:'Atmospheric sky icons.',price:1,preview:'linear-gradient(135deg,#89CFF0,#FFD700)',icons:{home:'fa-cloud-sun',groups:'fa-tornado',skins:'fa-rainbow',profiles:'fa-snowman',shop:'fa-umbrella',messages:'fa-snowflake',notifications:'fa-bolt-lightning',like:'fa-thumbs-up',dislike:'fa-thumbs-down',comment:'fa-comment-dots',share:'fa-wind',search:'fa-temperature-half',edit:'fa-droplet',bookmark:'fa-sun',heart:'fa-cloud-moon'}},
+    {id:'gamer',name:'Gamer',desc:'Controller-ready gaming icons.',price:1,preview:'linear-gradient(135deg,#7b2ff7,#00f5a0)',icons:{home:'fa-gamepad',groups:'fa-headset',skins:'fa-ghost',profiles:'fa-skull-crossbones',shop:'fa-trophy',messages:'fa-walkie-talkie',notifications:'fa-bell',like:'fa-hand-fist',dislike:'fa-hand-point-down',comment:'fa-comment-dots',share:'fa-share-nodes',search:'fa-crosshairs',edit:'fa-screwdriver-wrench',bookmark:'fa-flag-checkered',heart:'fa-heart-pulse'}},
+    {id:'music',name:'Music',desc:'Jam out with musical icons.',price:1,preview:'linear-gradient(135deg,#e91e63,#ff9800)',icons:{home:'fa-music',groups:'fa-guitar',skins:'fa-sliders',profiles:'fa-microphone',shop:'fa-record-vinyl',messages:'fa-headphones',notifications:'fa-volume-high',like:'fa-thumbs-up',dislike:'fa-thumbs-down',comment:'fa-comment-dots',share:'fa-share-from-square',search:'fa-magnifying-glass',edit:'fa-pen',bookmark:'fa-compact-disc',heart:'fa-drum'}},
+    {id:'horror',name:'Horror',desc:'Creepy spooky icons.',price:1,preview:'linear-gradient(135deg,#1a1a2e,#6b0000)',icons:{home:'fa-house-chimney-crack',groups:'fa-ghost',skins:'fa-skull',profiles:'fa-mask',shop:'fa-spider',messages:'fa-crow',notifications:'fa-triangle-exclamation',like:'fa-thumbs-up',dislike:'fa-thumbs-down',comment:'fa-comment-dots',share:'fa-share-nodes',search:'fa-eye',edit:'fa-wand-sparkles',bookmark:'fa-cross',heart:'fa-brain'}},
+    {id:'fitness',name:'Fitness',desc:'Pump iron with gym icons.',price:1,preview:'linear-gradient(135deg,#ff6b35,#f7dc6f)',icons:{home:'fa-dumbbell',groups:'fa-people-pulling',skins:'fa-shirt',profiles:'fa-person-running',shop:'fa-basket-shopping',messages:'fa-stopwatch',notifications:'fa-bell',like:'fa-thumbs-up',dislike:'fa-thumbs-down',comment:'fa-comment-dots',share:'fa-share-from-square',search:'fa-magnifying-glass',edit:'fa-pen',bookmark:'fa-medal',heart:'fa-heart-pulse'}},
+    {id:'minimal',name:'Minimal',desc:'Clean simple outlines.',price:1,preview:'linear-gradient(135deg,#e0e0e0,#9e9e9e)',icons:{home:'fa-circle',groups:'fa-circle-nodes',skins:'fa-circle-half-stroke',profiles:'fa-circle-user',shop:'fa-circle-dot',messages:'fa-circle-question',notifications:'fa-circle-exclamation',like:'fa-thumbs-up',dislike:'fa-thumbs-down',comment:'fa-comment',share:'fa-up-right-from-square',search:'fa-magnifying-glass',edit:'fa-pen',bookmark:'fa-bookmark',heart:'fa-heart'}}
 ];
 
 var coinSkins = [
@@ -454,6 +477,11 @@ var templates = [
     {id:'duo',name:'Duo',desc:'Clean two-column split. Profile left, feed right.',price:1,preview:'linear-gradient(135deg,#3498db,#2980b9)'},
     {id:'headline',name:'Headline',desc:'Profile spans the top like a newspaper masthead.',price:1,preview:'linear-gradient(135deg,#9b59b6,#8e44ad)'},
     {id:'stack',name:'Stack',desc:'Full-width stacked layout. Everything in one vertical flow.',price:1,preview:'linear-gradient(135deg,#e67e22,#d35400)'},
+    {id:'focus',name:'Focus',desc:'Extra-wide feed with no sidebars. Distraction-free browsing.',price:1,preview:'linear-gradient(135deg,#1abc9c,#16a085)'},
+    {id:'grid',name:'Grid',desc:'Two equal columns. Feed and sidebar side by side.',price:1,preview:'linear-gradient(135deg,#8e44ad,#2c3e50)'},
+    {id:'journal',name:'Journal',desc:'Narrow centered feed with wide margins. Blog-style reading.',price:1,preview:'linear-gradient(135deg,#f8b500,#e74c3c)'},
+    {id:'wing',name:'Wing',desc:'Wide left sidebar with compact feed. Profile-forward layout.',price:1,preview:'linear-gradient(135deg,#00b4db,#0083b0)'},
+    {id:'hub',name:'Hub',desc:'Profile and feed centered. Sidebars hidden until hovered.',price:1,preview:'linear-gradient(135deg,#c0392b,#8e44ad)'}
 ];
 
 var navStyles = [
@@ -466,7 +494,12 @@ var navStyles = [
     {id:'slim',name:'Slim',desc:'Ultra-thin 36px bar. Maximum content space.',price:1,preview:'linear-gradient(135deg,#5c6bc0,#283593)'},
     {id:'horizon',name:'Horizon',desc:'Full navbar moved to the bottom of the screen.',price:1,preview:'linear-gradient(135deg,#f4511e,#bf360c)'},
     {id:'mirror',name:'Mirror',desc:'Right-side vertical sidebar. Flipped Metro layout.',price:1,preview:'linear-gradient(135deg,#26a69a,#00695c)'},
-    {id:'island',name:'Island',desc:'Three floating islands. Logo, nav, and user all separate.',price:1,preview:'linear-gradient(135deg,#42a5f5,#0d47a1)'}
+    {id:'island',name:'Island',desc:'Three floating islands. Logo, nav, and user all separate.',price:1,preview:'linear-gradient(135deg,#42a5f5,#0d47a1)'},
+    {id:'ribbon',name:'Ribbon',desc:'Thin colored ribbon across the top with centered icons.',price:1,preview:'linear-gradient(135deg,#e91e63,#f06292)'},
+    {id:'glass',name:'Glass',desc:'Transparent frosted glass bar. Content shows through.',price:1,preview:'linear-gradient(135deg,#b2ebf2,#80deea)'},
+    {id:'split',name:'Split',desc:'Logo left, nav bottom. Two separate bars.',price:1,preview:'linear-gradient(135deg,#ff7043,#d84315)'},
+    {id:'minimal',name:'Minimal',desc:'Just icons. No background. Invisible until hover.',price:1,preview:'linear-gradient(135deg,#cfd8dc,#90a4ae)'},
+    {id:'arcade',name:'Arcade',desc:'Chunky pixel-style bar. Retro gaming feel.',price:1,preview:'linear-gradient(135deg,#7b2ff7,#00f5a0)'}
 ];
 
 var premiumSkins = [
@@ -479,7 +512,23 @@ var premiumSkins = [
     {id:'sakura',name:'Sakura Bloom',desc:'Delicate cherry blossom pink with soft floral elegance.',price:1,preview:'linear-gradient(135deg,#ffecd2,#fcb69f)',border:'conic-gradient(from 0deg,#fcb69f,#ff9a9e,#ffecd2,#f8b4b4,#fcb69f)',icon:'fa-spa',iconColor:'#ff9a9e',accent:'#e11d73',accentHover:'#be185d',dark:false},
     {id:'galaxy',name:'Galaxy Swirl',desc:'Deep space nebula with cosmic purples and stellar blues.',price:1,preview:'linear-gradient(135deg,#0c0032,#6e0dd0)',border:'conic-gradient(from 0deg,#6e0dd0,#240090,#0c0032,#3500d3,#6e0dd0)',icon:'fa-star',iconColor:'#b388ff',accent:'#a855f7',accentHover:'#9333ea',dark:true},
     {id:'ocean-tide',name:'Ocean Tide',desc:'Flowing ocean waves with deep aqua and seafoam gradients.',price:1,preview:'linear-gradient(135deg,#0077b6,#90e0ef)',border:'conic-gradient(from 0deg,#0077b6,#00b4d8,#90e0ef,#caf0f8,#0077b6)',icon:'fa-water',iconColor:'#90e0ef',accent:'#0891b2',accentHover:'#0e7490',dark:false},
-    {id:'molten-gold',name:'Molten Gold',desc:'Liquid gold with luxurious metallic shimmer. Pure opulence.',price:1,preview:'linear-gradient(135deg,#bf953f,#fcf6ba)',border:'conic-gradient(from 0deg,#bf953f,#fcf6ba,#b38728,#fbf5b7,#bf953f)',icon:'fa-crown',iconColor:'#fcf6ba',accent:'#f59e0b',accentHover:'#d97706',dark:true}
+    {id:'molten-gold',name:'Molten Gold',desc:'Liquid gold with luxurious metallic shimmer. Pure opulence.',price:1,preview:'linear-gradient(135deg,#bf953f,#fcf6ba)',border:'conic-gradient(from 0deg,#bf953f,#fcf6ba,#b38728,#fbf5b7,#bf953f)',icon:'fa-crown',iconColor:'#fcf6ba',accent:'#f59e0b',accentHover:'#d97706',dark:true},
+    {id:'toxic-green',name:'Toxic Green',desc:'Radioactive neon green on pitch black. Dangerously cool.',price:1,preview:'linear-gradient(135deg,#0a0a0a,#39ff14)',border:'conic-gradient(from 0deg,#39ff14,#00ff41,#32cd32,#00ff00,#39ff14)',icon:'fa-biohazard',iconColor:'#39ff14',accent:'#39ff14',accentHover:'#32cd32',dark:true},
+    {id:'vaporwave',name:'Vaporwave',desc:'Retro 80s pink and cyan. Nostalgic aesthetic vibes.',price:1,preview:'linear-gradient(135deg,#ff71ce,#01cdfe)',border:'conic-gradient(from 0deg,#ff71ce,#01cdfe,#b967ff,#05ffa1,#ff71ce)',icon:'fa-vr-cardboard',iconColor:'#ff71ce',accent:'#b967ff',accentHover:'#9b4dca',dark:true},
+    {id:'blood-moon',name:'Blood Moon',desc:'Deep crimson and obsidian. Dark and brooding intensity.',price:1,preview:'linear-gradient(135deg,#1a0000,#8b0000)',border:'conic-gradient(from 0deg,#8b0000,#cc0000,#660000,#990000,#8b0000)',icon:'fa-moon',iconColor:'#cc0000',accent:'#cc0000',accentHover:'#990000',dark:true},
+    {id:'cotton-candy',name:'Cotton Candy',desc:'Soft pastel pink and baby blue. Sweet and dreamy.',price:1,preview:'linear-gradient(135deg,#ffd1dc,#b5e8ff)',border:'conic-gradient(from 0deg,#ffd1dc,#b5e8ff,#e8d5f5,#ffd1dc)',icon:'fa-cloud',iconColor:'#ffa6c9',accent:'#e91e8c',accentHover:'#c2185b',dark:false},
+    {id:'matrix',name:'Matrix',desc:'Digital rain green on black. Enter the simulation.',price:1,preview:'linear-gradient(135deg,#000000,#003300)',border:'conic-gradient(from 0deg,#00ff41,#008f11,#00ff41,#003300,#00ff41)',icon:'fa-terminal',iconColor:'#00ff41',accent:'#00ff41',accentHover:'#00cc33',dark:true}
+];
+
+var guildSkins = [
+    {id:'guild-banner',name:'Guild Banner',desc:'Medieval guild banner theme with heraldic colors.',price:50,preview:'linear-gradient(135deg,#8B4513,#DAA520)',cardBg:'#f5e6d0',cardText:'#5c3310',cardMuted:'#8B6914'},
+    {id:'guild-fortress',name:'Fortress',desc:'Stone castle walls and iron gates. Impenetrable style.',price:75,preview:'linear-gradient(135deg,#4a4a4a,#7a7a7a)',cardBg:'#e8e8e8',cardText:'#333',cardMuted:'#666'},
+    {id:'guild-dragon',name:'Dragon\'s Lair',desc:'Fiery dragon scales with smoldering ember accents.',price:100,preview:'linear-gradient(135deg,#8b0000,#ff4500)',cardBg:'#2a0a0a',cardText:'#ff6b35',cardMuted:'#cc4400'},
+    {id:'guild-enchanted',name:'Enchanted Grove',desc:'Mystical forest with glowing fairy dust particles.',price:75,preview:'linear-gradient(135deg,#1a472a,#2d8659)',cardBg:'#e8f5e9',cardText:'#1a472a',cardMuted:'#2d8659'},
+    {id:'guild-ocean',name:'Pirate Cove',desc:'Seafaring adventure with treasure map aesthetics.',price:50,preview:'linear-gradient(135deg,#1a3a5c,#2980b9)',cardBg:'#e3f2fd',cardText:'#1a3a5c',cardMuted:'#2471a3'},
+    {id:'guild-celestial',name:'Celestial Order',desc:'Heavenly starlight with divine golden halos.',price:100,preview:'linear-gradient(135deg,#1a1a3e,#4a0080)',cardBg:'#1e1e3a',cardText:'#e8d5ff',cardMuted:'#b388ff'},
+    {id:'guild-steampunk',name:'Steampunk Works',desc:'Clockwork gears and brass pipes. Industrial elegance.',price:75,preview:'linear-gradient(135deg,#5c3a1e,#b87333)',cardBg:'#f5e6d0',cardText:'#5c3a1e',cardMuted:'#b87333'},
+    {id:'guild-frost',name:'Frost Legion',desc:'Icy blue with frozen crystal formations.',price:50,preview:'linear-gradient(135deg,#0a2a4a,#00bcd4)',cardBg:'#e0f7fa',cardText:'#006064',cardMuted:'#00838f'}
 ];
 
 var gfLink=document.createElement('link');gfLink.rel='stylesheet';gfLink.href='https://fonts.googleapis.com/css2?family=Orbitron&family=Rajdhani&family=Quicksand&family=Pacifico&family=Baloo+2&display=swap';document.head.appendChild(gfLink);
@@ -690,6 +739,46 @@ function updateCoins(){
     void el.offsetWidth;
     el.classList.add('coin-pop');
 }
+function addGroupCoins(groupId,amount){
+    if(!state.groupCoins[groupId]) state.groupCoins[groupId]=0;
+    state.groupCoins[groupId]+=amount;
+    var el=document.getElementById('gvGroupCoinCount');
+    if(el) el.textContent=state.groupCoins[groupId]||0;
+    var el2=document.getElementById('gvGroupCoinCount2');
+    if(el2) el2.textContent=state.groupCoins[groupId]||0;
+    var coinWrap=document.getElementById('gvGroupCoins');
+    if(coinWrap){coinWrap.classList.remove('coin-pop');void coinWrap.offsetWidth;coinWrap.classList.add('coin-pop');}
+}
+function getGroupCoinCount(groupId){return state.groupCoins[groupId]||0;}
+function getTodayKey(){var d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+function canEarnGroupPostCoin(groupId){
+    var dayKey=getTodayKey();
+    if(!state.groupPostCoinCount[groupId]) state.groupPostCoinCount[groupId]={};
+    return (state.groupPostCoinCount[groupId][dayKey]||0)<10;
+}
+function trackGroupPostCoin(groupId){
+    var dayKey=getTodayKey();
+    if(!state.groupPostCoinCount[groupId]) state.groupPostCoinCount[groupId]={};
+    if(!state.groupPostCoinCount[groupId][dayKey]) state.groupPostCoinCount[groupId][dayKey]=0;
+    state.groupPostCoinCount[groupId][dayKey]++;
+}
+function canEarnGroupCommentCoin(groupId,postId){
+    if(!state.groupCommentCoinPosts[groupId]) state.groupCommentCoinPosts[groupId]={};
+    return !state.groupCommentCoinPosts[groupId][postId];
+}
+function trackGroupCommentCoin(groupId,postId){
+    if(!state.groupCommentCoinPosts[groupId]) state.groupCommentCoinPosts[groupId]={};
+    state.groupCommentCoinPosts[groupId][postId]=true;
+}
+function canEarnGroupReplyCoin(groupId,postId){
+    if(!state.groupReplyCoinPosts[groupId]) state.groupReplyCoinPosts[groupId]={};
+    return !state.groupReplyCoinPosts[groupId][postId];
+}
+function trackGroupReplyCoin(groupId,postId){
+    if(!state.groupReplyCoinPosts[groupId]) state.groupReplyCoinPosts[groupId]={};
+    state.groupReplyCoinPosts[groupId][postId]=true;
+}
+
 $('#navCoins').addEventListener('click',function(){
     $('#userDropdownMenu').classList.remove('show');
     navigateTo('shop');
@@ -971,6 +1060,7 @@ function showComments(postId,countEl,sortMode){
             var rid=replyTarget+'-r-'+commentReplies[replyTarget].length;
             commentReplies[replyTarget].push({cid:rid,name:'John Doe',img:null,text:text});
             if(!state.replyCoinPosts[postId]){state.replyCoinPosts[postId]=true;state.coins+=2;updateCoins();}
+            var _grm=postId.match(/^gvp?-(\d+)-/);if(_grm){var _gid=parseInt(_grm[1]);if(canEarnGroupReplyCoin(_gid,postId)){addGroupCoins(_gid,2);trackGroupReplyCoin(_gid,postId);}}
             replyTarget=null;
             document.getElementById('replyIndicator').style.display='none';
             input.placeholder='Write a comment...';
@@ -978,6 +1068,7 @@ function showComments(postId,countEl,sortMode){
             if(!state.comments[postId])state.comments[postId]=[];
             state.comments[postId].push(text);
             if(!state.commentCoinPosts[postId]){state.commentCoinPosts[postId]=true;state.coins+=2;updateCoins();}
+            var _gcm=postId.match(/^gvp?-(\d+)-/);if(_gcm){var _gid2=parseInt(_gcm[1]);if(canEarnGroupCommentCoin(_gid2,postId)){addGroupCoins(_gid2,2);trackGroupCommentCoin(_gid2,postId);}}
         }
         input.value='';if(countEl)countEl.textContent=parseInt(countEl.textContent)+1;
         renderInlineComments(postId);
@@ -1568,7 +1659,7 @@ function showGroupView(group){
     }
     cardHtml+='<h3 class="profile-name">'+group.name+'</h3>';
     cardHtml+='<p class="profile-title">'+group.desc+'</p>';
-    cardHtml+='<div class="profile-stats"><div class="stat"><span class="stat-count">'+fmtNum(group.members)+'</span><span class="stat-label">Members</span></div><div class="stat"><span class="stat-count" id="gvPostCount">0</span><span class="stat-label">Posts</span></div></div>';
+    cardHtml+='<div class="profile-stats"><div class="stat"><span class="stat-count">'+fmtNum(group.members)+'</span><span class="stat-label">Members</span></div><div class="stat"><span class="stat-count" id="gvPostCount">0</span><span class="stat-label">Posts</span></div><div class="stat" id="gvGroupCoins"><span class="stat-count" id="gvGroupCoinCount" style="color:#f59e0b;">'+getGroupCoinCount(group.id)+'</span><span class="stat-label"><i class="fas fa-coins" style="color:#f59e0b;font-size:11px;"></i> Group Coins</span></div></div>';
     cardHtml+='<div class="pv-actions">';
     if(isOwner) cardHtml+='<button class="btn btn-outline" id="gvEditBtn"><i class="fas fa-pen"></i> Edit Group</button>';
     cardHtml+='<button class="btn '+(joined?'btn-disabled':'btn-primary')+'" id="gvJoinBtn" data-gid="'+group.id+'">'+(joined?'Joined':'Join Group')+'</button>';
@@ -1642,6 +1733,25 @@ function showGroupView(group){
     $('#gvPostsFeed').innerHTML=feedHtml;
     for(var k=0;k<8;k++) renderInlineComments('gv-'+group.id+'-'+k);
     $('#gvPostCount').textContent=groupPosts.length+8;
+
+    // Mode tabs (Feed / Group Shop)
+    var gvModeHtml='<div class="search-tabs" id="gvModeTabs">';
+    gvModeHtml+='<button class="search-tab active" data-gvmode="feed"><i class="fas fa-stream"></i> Feed</button>';
+    if(joined||isOwner) gvModeHtml+='<button class="search-tab" data-gvmode="shop"><i class="fas fa-store"></i> Group Shop</button>';
+    gvModeHtml+='</div>';
+    $('#gvPostBar').insertAdjacentHTML('beforebegin',gvModeHtml);
+
+    // Shop container (hidden by default)
+    var shopSectionHtml='<div id="gvShopSection" style="display:none;">';
+    shopSectionHtml+='<div class="card gv-shop-header"><div class="gv-shop-title"><i class="fas fa-store"></i> Group Shop</div>';
+    shopSectionHtml+='<div class="gv-shop-coins"><i class="fas fa-coins"></i> <span id="gvGroupCoinCount2">'+getGroupCoinCount(group.id)+'</span> Group Coins</div></div>';
+    shopSectionHtml+='<div class="search-tabs" id="gvShopTabs"></div>';
+    shopSectionHtml+='<div id="gvShopContent"></div>';
+    shopSectionHtml+='</div>';
+    $('#gvPostsFeed').insertAdjacentHTML('afterend',shopSectionHtml);
+
+    // Apply active group skin
+    applyGroupSkin(group.id);
 
     // Event listeners
     document.getElementById('gvBack').addEventListener('click',function(e){e.preventDefault();navigateTo('groups');});
@@ -1754,12 +1864,48 @@ function showGroupView(group){
     if(showAllBtn){showAllBtn.addEventListener('click',function(){showGroupMembersModal(group);});}
     var deleteGrpBtn=document.getElementById('gvDeleteGroupBtn');
     if(deleteGrpBtn){deleteGrpBtn.addEventListener('click',function(){showDeleteGroupModal(group);});}
+    // Group view mode tab switching
+    $$('#gvModeTabs .search-tab').forEach(function(tab){tab.addEventListener('click',function(){
+        $$('#gvModeTabs .search-tab').forEach(function(t){t.classList.remove('active');});
+        tab.classList.add('active');
+        var mode=tab.dataset.gvmode;
+        if(mode==='feed'){
+            $('#gvPostBar').style.display='';$('#gvPostsFeed').style.display='';
+            var ss=document.getElementById('gvShopSection');if(ss)ss.style.display='none';
+        } else if(mode==='shop'){
+            $('#gvPostBar').style.display='none';$('#gvPostsFeed').style.display='none';
+            var ss=document.getElementById('gvShopSection');if(ss){ss.style.display='';renderGroupShop(group.id);}
+        }
+    });});
+    // Swipe left/right to switch Feed <-> Group Shop
+    var _gvCenter=document.querySelector('#page-group-view .gv-center');
+    if(_gvCenter&&(joined||isOwner)){
+        var _gvTx=0;
+        _gvCenter.addEventListener('touchstart',function(e){_gvTx=e.touches[0].clientX;},{passive:true});
+        _gvCenter.addEventListener('touchend',function(e){
+            var dx=e.changedTouches[0].clientX-_gvTx;
+            if(Math.abs(dx)<50) return;
+            var modes=['feed','shop'];
+            var feedVis=$('#gvPostsFeed').style.display!=='none';
+            var cur=feedVis?0:1;
+            var next=dx<0?cur+1:cur-1;
+            if(next<0||next>=modes.length) return;
+            $$('#gvModeTabs .search-tab').forEach(function(t){t.classList.toggle('active',t.dataset.gvmode===modes[next]);});
+            if(modes[next]==='feed'){
+                $('#gvPostBar').style.display='';$('#gvPostsFeed').style.display='';
+                var ss=document.getElementById('gvShopSection');if(ss)ss.style.display='none';
+            } else {
+                $('#gvPostBar').style.display='none';$('#gvPostsFeed').style.display='none';
+                var ss=document.getElementById('gvShopSection');if(ss){ss.style.display='';renderGroupShop(group.id);}
+            }
+        });
+    }
     bindGvPostEvents();
 }
 
 function bindGvPostEvents(){
-    $$('#gvPostsFeed .like-btn').forEach(function(btn){btn.addEventListener('click',function(e){if(e.target.classList.contains('like-count'))return;var pid=btn.getAttribute('data-post-id');var countEl=btn.querySelector('.like-count');var count=parseInt(countEl.textContent);var had=!!(state.likedPosts[pid]||state.dislikedPosts[pid]);if(state.likedPosts[pid]){delete state.likedPosts[pid];btn.classList.remove('liked');btn.querySelector('i').className='far fa-thumbs-up';countEl.textContent=count-1;}else{if(state.dislikedPosts[pid]){var db=btn.closest('.action-left').querySelector('.dislike-btn');var dc=db.querySelector('.dislike-count');dc.textContent=parseInt(dc.textContent)-1;delete state.dislikedPosts[pid];db.classList.remove('disliked');db.querySelector('i').className='far fa-thumbs-down';}state.likedPosts[pid]=true;btn.classList.add('liked');btn.querySelector('i').className='fas fa-thumbs-up';countEl.textContent=count+1;}var has=!!(state.likedPosts[pid]||state.dislikedPosts[pid]);if(!had&&has){state.coins++;updateCoins();}else if(had&&!has){state.coins--;updateCoins();}});});
-    $$('#gvPostsFeed .dislike-btn').forEach(function(btn){btn.addEventListener('click',function(){var pid=btn.getAttribute('data-post-id');var countEl=btn.querySelector('.dislike-count');var count=parseInt(countEl.textContent);var had=!!(state.likedPosts[pid]||state.dislikedPosts[pid]);if(state.dislikedPosts[pid]){delete state.dislikedPosts[pid];btn.classList.remove('disliked');btn.querySelector('i').className='far fa-thumbs-down';countEl.textContent=count-1;}else{if(state.likedPosts[pid]){var lb=btn.closest('.action-left').querySelector('.like-btn');var lc=lb.querySelector('.like-count');lc.textContent=parseInt(lc.textContent)-1;delete state.likedPosts[pid];lb.classList.remove('liked');lb.querySelector('i').className='far fa-thumbs-up';}state.dislikedPosts[pid]=true;btn.classList.add('disliked');btn.querySelector('i').className='fas fa-thumbs-down';countEl.textContent=count+1;}var has=!!(state.likedPosts[pid]||state.dislikedPosts[pid]);if(!had&&has){state.coins++;updateCoins();}else if(had&&!has){state.coins--;updateCoins();}});});
+    $$('#gvPostsFeed .like-btn').forEach(function(btn){btn.addEventListener('click',function(e){if(e.target.classList.contains('like-count'))return;var pid=btn.getAttribute('data-post-id');var countEl=btn.querySelector('.like-count');var count=parseInt(countEl.textContent);var had=!!(state.likedPosts[pid]||state.dislikedPosts[pid]);if(state.likedPosts[pid]){delete state.likedPosts[pid];btn.classList.remove('liked');btn.querySelector('i').className='far fa-thumbs-up';countEl.textContent=count-1;}else{if(state.dislikedPosts[pid]){var db=btn.closest('.action-left').querySelector('.dislike-btn');var dc=db.querySelector('.dislike-count');dc.textContent=parseInt(dc.textContent)-1;delete state.dislikedPosts[pid];db.classList.remove('disliked');db.querySelector('i').className='far fa-thumbs-down';}state.likedPosts[pid]=true;btn.classList.add('liked');btn.querySelector('i').className='fas fa-thumbs-up';countEl.textContent=count+1;}var has=!!(state.likedPosts[pid]||state.dislikedPosts[pid]);if(!had&&has){state.coins++;updateCoins();var _glm=pid.match(/^gvp?-(\d+)-/);if(_glm)addGroupCoins(parseInt(_glm[1]),1);}else if(had&&!has){state.coins--;updateCoins();var _glm2=pid.match(/^gvp?-(\d+)-/);if(_glm2&&(state.groupCoins[parseInt(_glm2[1])]||0)>0)addGroupCoins(parseInt(_glm2[1]),-1);}});});
+    $$('#gvPostsFeed .dislike-btn').forEach(function(btn){btn.addEventListener('click',function(){var pid=btn.getAttribute('data-post-id');var countEl=btn.querySelector('.dislike-count');var count=parseInt(countEl.textContent);var had=!!(state.likedPosts[pid]||state.dislikedPosts[pid]);if(state.dislikedPosts[pid]){delete state.dislikedPosts[pid];btn.classList.remove('disliked');btn.querySelector('i').className='far fa-thumbs-down';countEl.textContent=count-1;}else{if(state.likedPosts[pid]){var lb=btn.closest('.action-left').querySelector('.like-btn');var lc=lb.querySelector('.like-count');lc.textContent=parseInt(lc.textContent)-1;delete state.likedPosts[pid];lb.classList.remove('liked');lb.querySelector('i').className='far fa-thumbs-up';}state.dislikedPosts[pid]=true;btn.classList.add('disliked');btn.querySelector('i').className='fas fa-thumbs-down';countEl.textContent=count+1;}var has=!!(state.likedPosts[pid]||state.dislikedPosts[pid]);if(!had&&has){state.coins++;updateCoins();var _gdm=pid.match(/^gvp?-(\d+)-/);if(_gdm)addGroupCoins(parseInt(_gdm[1]),1);}else if(had&&!has){state.coins--;updateCoins();var _gdm2=pid.match(/^gvp?-(\d+)-/);if(_gdm2&&(state.groupCoins[parseInt(_gdm2[1])]||0)>0)addGroupCoins(parseInt(_gdm2[1]),-1);}});});
     $$('#gvPostsFeed .comment-btn').forEach(function(btn){btn.addEventListener('click',function(){var postId=btn.closest('.action-left').querySelector('.like-btn').getAttribute('data-post-id');showComments(postId,btn.querySelector('span'));});});
     bindLikeCountClicks('#gvPostsFeed');
 }
@@ -1788,7 +1934,9 @@ function openGroupPostModal(group){
         var mediaHtml='';
         if(mediaList.length>0){var cnt=Math.min(mediaList.length,5);mediaHtml='<div class="post-media-grid pm-count-'+cnt+'">';mediaList.slice(0,5).forEach(function(m){mediaHtml+='<div class="pm-thumb">'+(m.type==='video'?'<video src="'+m.src+'" controls></video>':'<img src="'+m.src+'">')+'</div>';});mediaHtml+='</div>';}
         state.groupPosts[group.id].unshift({name:'John Doe',avatar:$('#profileAvatarImg').src,text:text,media:mediaHtml,time:'just now'});
-        if(state.postCoinCount<10){state.coins+=5;state.postCoinCount++;updateCoins();}closeModal();showGroupView(group);
+        if(state.postCoinCount<10){state.coins+=5;state.postCoinCount++;updateCoins();}
+        if(canEarnGroupPostCoin(group.id)){addGroupCoins(group.id,5);trackGroupPostCoin(group.id);}
+        closeModal();showGroupView(group);
     });
 }
 
@@ -2673,6 +2821,175 @@ function renderShop(){
     });});
 }
 
+// ======================== GROUP SHOP ========================
+var currentGroupShopTab=null;
+
+function groupShopBuy(groupId,owned,price,cls,attr){
+    var gc=getGroupCoinCount(groupId);
+    if(owned) return '<button class="btn btn-disabled">Owned</button>';
+    return '<div class="skin-price"><i class="fas fa-coins" style="color:#f59e0b;"></i> '+price+' Group Coins</div><button class="btn '+(gc>=price?'btn-primary':'btn-disabled')+' '+cls+'" '+attr+(gc<price?' disabled':'')+'>Buy</button>';
+}
+
+function getGroupShopCategories(groupId){
+    var cats=[];
+    if(!state.groupOwnedSkins[groupId]) state.groupOwnedSkins[groupId]={};
+    if(!state.groupOwnedPremiumSkins[groupId]) state.groupOwnedPremiumSkins[groupId]={};
+
+    cats.push({key:'basic',label:'<i class="fas fa-palette"></i> Basic Skins',items:skins,render:function(s){
+        return '<div class="skin-card"><div class="skin-preview" style="background:'+s.preview+';"><div class="skin-preview-inner" style="color:#333;background:#fff;">Preview</div></div><div class="skin-card-body" style="background:'+s.cardBg+';"><h4 style="color:'+s.cardText+';">'+s.name+'</h4><p style="color:'+s.cardMuted+';">'+s.desc+'</p>'+groupShopBuy(groupId,state.groupOwnedSkins[groupId][s.id],s.price,'buy-gskin-btn','data-sid="'+s.id+'" data-gid="'+groupId+'"')+'</div></div>';
+    }});
+
+    cats.push({key:'premium',label:'<i class="fas fa-gem"></i> Premium Skins',items:premiumSkins,render:function(s){
+        return '<div class="skin-card"><div class="skin-preview" style="background:'+s.preview+';"><div class="premium-preview-frame" style="background:'+s.border+';"><img src="https://i.pravatar.cc/60?img=12" class="premium-preview-avatar"></div></div><div class="skin-card-body"><h4><i class="fas '+s.icon+'" style="color:'+s.iconColor+';margin-right:6px;"></i>'+s.name+'</h4><p>'+s.desc+'</p>'+groupShopBuy(groupId,state.groupOwnedPremiumSkins[groupId][s.id],s.price,'buy-gspremium-btn','data-pid="'+s.id+'" data-gid="'+groupId+'"')+'</div></div>';
+    }});
+
+    cats.push({key:'guild',label:'<i class="fas fa-shield-halved"></i> Guild Skins',items:guildSkins,render:function(s){
+        return '<div class="skin-card"><div class="skin-preview" style="background:'+s.preview+';"><div class="skin-preview-inner" style="color:'+s.cardText+';background:'+s.cardBg+';">Guild</div></div><div class="skin-card-body" style="background:'+s.cardBg+';"><h4 style="color:'+s.cardText+';">'+s.name+'</h4><p style="color:'+s.cardMuted+';">'+s.desc+'</p>'+groupShopBuy(groupId,state.groupOwnedSkins[groupId][s.id],s.price,'buy-gskin-btn','data-sid="'+s.id+'" data-gid="'+groupId+'"')+'</div></div>';
+    }});
+
+    // Apply Skins tab (only if group owns skins)
+    var ownedBasic=skins.filter(function(s){return state.groupOwnedSkins[groupId][s.id];});
+    var ownedGuild=guildSkins.filter(function(s){return state.groupOwnedSkins[groupId][s.id];});
+    var ownedPrem=premiumSkins.filter(function(s){return state.groupOwnedPremiumSkins[groupId][s.id];});
+    var allOwned=ownedBasic.concat(ownedGuild).concat(ownedPrem);
+    if(allOwned.length){
+        cats.push({key:'owned',label:'<i class="fas fa-check-circle"></i> Apply Skins',items:allOwned,render:function(s){
+            var isPremium=!!s.border;
+            var isActive=isPremium?(state.groupActivePremiumSkin[groupId]===s.id):(state.groupActiveSkin[groupId]===s.id);
+            var bodyStyle=s.cardBg?'background:'+s.cardBg+';':'';
+            var titleStyle=s.cardText?'color:'+s.cardText+';':'';
+            var descStyle=s.cardMuted?'color:'+s.cardMuted+';':'';
+            var inner=isPremium?'<div class="premium-preview-frame" style="background:'+s.border+';"><img src="https://i.pravatar.cc/60?img=12" class="premium-preview-avatar"></div>':'<div class="skin-preview-inner" style="color:#333;background:#fff;">Preview</div>';
+            return '<div class="skin-card"><div class="skin-preview" style="background:'+s.preview+';">'+inner+'</div><div class="skin-card-body" style="'+bodyStyle+'"><h4 style="'+titleStyle+'">'+(s.icon?'<i class="fas '+s.icon+'" style="color:'+s.iconColor+';margin-right:6px;"></i>':'')+s.name+'</h4><p style="'+descStyle+'">'+s.desc+'</p><button class="btn '+(isActive?'btn-disabled':'btn-primary')+' apply-gskin-btn" data-sid="'+s.id+'" data-gid="'+groupId+'" data-premium="'+(isPremium?'1':'0')+'">'+(isActive?'Active':'Apply')+'</button></div></div>';
+        }});
+    }
+
+    return cats;
+}
+
+function renderGroupShop(groupId){
+    var container=document.getElementById('gvShopContent');
+    if(!container) return;
+    var cats=getGroupShopCategories(groupId);
+    if(!currentGroupShopTab) currentGroupShopTab=cats[0].key;
+    if(!cats.find(function(c){return c.key===currentGroupShopTab;})) currentGroupShopTab=cats[0].key;
+
+    var tabsHtml='';
+    cats.forEach(function(c){tabsHtml+='<button class="search-tab'+(c.key===currentGroupShopTab?' active':'')+'" data-gstab="'+c.key+'">'+c.label+'</button>';});
+    document.getElementById('gvShopTabs').innerHTML=tabsHtml;
+
+    var active=cats.find(function(c){return c.key===currentGroupShopTab;});
+    var html='<div class="shop-scroll-row scroll-2row">';
+    active.items.forEach(function(item){html+=active.render(item);});
+    html+='</div>';
+    container.innerHTML=html;
+
+    function gShopPurchased(btn){var p=btn.parentElement;var priceEl=p.querySelector('.skin-price');if(priceEl)priceEl.remove();btn.className='btn btn-disabled';btn.textContent='Owned';btn.disabled=true;btn.replaceWith(btn.cloneNode(true));}
+
+    $$('#gvShopContent .buy-gskin-btn').forEach(function(btn){btn.addEventListener('click',function(){
+        var sid=btn.getAttribute('data-sid');var gid=parseInt(btn.getAttribute('data-gid'));
+        var skin=skins.find(function(s){return s.id===sid;})||guildSkins.find(function(s){return s.id===sid;});
+        if(!skin) return;
+        var gc=getGroupCoinCount(gid);
+        if(gc>=skin.price){
+            state.groupCoins[gid]-=skin.price;
+            if(!state.groupOwnedSkins[gid]) state.groupOwnedSkins[gid]={};
+            state.groupOwnedSkins[gid][sid]=true;
+            updateGroupCoinDisplay(gid);gShopPurchased(btn);
+            addNotification('skin','Group purchased the "'+skin.name+'" skin!');
+        }
+    });});
+
+    $$('#gvShopContent .buy-gspremium-btn').forEach(function(btn){btn.addEventListener('click',function(){
+        var pid=btn.getAttribute('data-pid');var gid=parseInt(btn.getAttribute('data-gid'));
+        var skin=premiumSkins.find(function(s){return s.id===pid;});
+        if(!skin) return;
+        var gc=getGroupCoinCount(gid);
+        if(gc>=skin.price){
+            state.groupCoins[gid]-=skin.price;
+            if(!state.groupOwnedPremiumSkins[gid]) state.groupOwnedPremiumSkins[gid]={};
+            state.groupOwnedPremiumSkins[gid][pid]=true;
+            updateGroupCoinDisplay(gid);gShopPurchased(btn);
+            addNotification('skin','Group purchased the "'+skin.name+'" premium skin!');
+        }
+    });});
+
+    $$('#gvShopContent .apply-gskin-btn').forEach(function(btn){btn.addEventListener('click',function(){
+        var sid=btn.getAttribute('data-sid');var gid=parseInt(btn.getAttribute('data-gid'));
+        var isPremium=btn.getAttribute('data-premium')==='1';
+        if(isPremium){state.groupActivePremiumSkin[gid]=sid;state.groupActiveSkin[gid]=null;}
+        else{state.groupActiveSkin[gid]=sid;state.groupActivePremiumSkin[gid]=null;}
+        applyGroupSkin(gid);renderGroupShop(gid);
+    });});
+
+    initDragScroll('#gvShopContent');
+
+    $$('#gvShopTabs .search-tab').forEach(function(tab){tab.addEventListener('click',function(){
+        $$('#gvShopTabs .search-tab').forEach(function(t){t.classList.remove('active');});
+        tab.classList.add('active');currentGroupShopTab=tab.dataset.gstab;renderGroupShop(groupId);
+    });});
+
+    // Swipe left/right to switch Group Shop tabs
+    var _gsTx=0;
+    container.addEventListener('touchstart',function(e){_gsTx=e.touches[0].clientX;},{passive:true});
+    container.addEventListener('touchend',function(e){
+        var dx=e.changedTouches[0].clientX-_gsTx;
+        if(Math.abs(dx)<50) return;
+        var keys=cats.map(function(c){return c.key;});
+        var ci=keys.indexOf(currentGroupShopTab);
+        if(dx<0&&ci<keys.length-1){currentGroupShopTab=keys[ci+1];renderGroupShop(groupId);}
+        else if(dx>0&&ci>0){currentGroupShopTab=keys[ci-1];renderGroupShop(groupId);}
+    });
+}
+
+function updateGroupCoinDisplay(gid){
+    var el=document.getElementById('gvGroupCoinCount');if(el)el.textContent=getGroupCoinCount(gid);
+    var el2=document.getElementById('gvGroupCoinCount2');if(el2)el2.textContent=getGroupCoinCount(gid);
+}
+
+var groupSkinBgs={
+    classic:'#e8f6f5',midnight:'#1a1a2e',ocean:'#d0e8f7',forest:'#dceede',royal:'#ede0f3',
+    sunset:'#fff3e0',cherry:'#fce4ec',slate:'#2c3a42',ember:'#fbe9e7',arctic:'#d8f3f6',moss:'#ecf4e2',
+    'guild-banner':'#efe0c8','guild-fortress':'#d5d5d5','guild-dragon':'#1a0505',
+    'guild-enchanted':'#dceede','guild-ocean':'#d0e8f7','guild-celestial':'#15152e',
+    'guild-steampunk':'#efe0c8','guild-frost':'#d8f3f6'
+};
+var groupSkinBanners={
+    classic:'linear-gradient(135deg,#5cbdb9,#4aada9)',midnight:'#1a1a2e',ocean:'linear-gradient(135deg,#1976d2,#0d47a1)',
+    forest:'linear-gradient(135deg,#2e7d32,#1b5e20)',royal:'linear-gradient(135deg,#7b1fa2,#4a148c)',
+    sunset:'linear-gradient(135deg,#ef6c00,#e65100)',cherry:'linear-gradient(135deg,#d81b60,#c2185b)',
+    slate:'linear-gradient(135deg,#37474f,#263238)',ember:'linear-gradient(135deg,#e64a19,#bf360c)',
+    arctic:'linear-gradient(135deg,#00acc1,#00838f)',moss:'linear-gradient(135deg,#689f38,#558b2f)',
+    'guild-banner':'linear-gradient(135deg,#8B4513,#DAA520)','guild-fortress':'linear-gradient(135deg,#4a4a4a,#7a7a7a)',
+    'guild-dragon':'linear-gradient(135deg,#8b0000,#ff4500)','guild-enchanted':'linear-gradient(135deg,#1a472a,#2d8659)',
+    'guild-ocean':'linear-gradient(135deg,#1a3a5c,#2980b9)','guild-celestial':'linear-gradient(135deg,#1a1a3e,#4a0080)',
+    'guild-steampunk':'linear-gradient(135deg,#5c3a1e,#b87333)','guild-frost':'linear-gradient(135deg,#0a2a4a,#00bcd4)'
+};
+function applyGroupSkin(groupId){
+    var gvPage=document.getElementById('page-group-view');
+    var banner=document.getElementById('gvCoverBanner');
+    var grp=groups.find(function(g){return g.id===groupId;});
+    var hasCover=grp&&grp.coverPhoto;
+    skins.forEach(function(s){gvPage.classList.remove('gskin-'+s.id);});
+    guildSkins.forEach(function(s){gvPage.classList.remove('gskin-'+s.id);});
+    premiumSkins.forEach(function(s){gvPage.classList.remove('gpremium-'+s.id);});
+    gvPage.classList.remove('gpremium-dark');
+    gvPage.style.background='';
+    if(banner&&!hasCover) banner.style.background='';
+    var activePremium=state.groupActivePremiumSkin[groupId];
+    var activeBasic=state.groupActiveSkin[groupId];
+    if(activePremium){
+        var skin=premiumSkins.find(function(s){return s.id===activePremium;});
+        if(skin){gvPage.classList.add('gpremium-'+activePremium);if(skin.dark)gvPage.classList.add('gpremium-dark');}
+        gvPage.style.background=skin&&skin.dark?'#0f172a':'#f0f0f0';
+        if(banner&&!hasCover) banner.style.background=skin&&skin.dark?'#0f172a':'';
+    } else if(activeBasic){
+        gvPage.classList.add('gskin-'+activeBasic);
+        gvPage.style.background=groupSkinBgs[activeBasic]||'';
+        if(banner&&!hasCover) banner.style.background=groupSkinBanners[activeBasic]||'';
+    }
+}
+
 var skinColors={
     classic:{primary:'#5cbdb9',hover:'#4aada9',navBg:'#5cbdb9',light:true},
     midnight:{primary:'#e94560',hover:'#c73a52',navBg:'#16213e'},
@@ -2732,8 +3049,8 @@ function applySkin(skinId,silent){
 }
 
 function applyFont(fontId,silent){
-    if(fontId){var f=fonts.find(function(x){return x.id===fontId;});document.body.style.fontFamily="'"+f.family+"',sans-serif";if(!silent)state.activeFont=fontId;}
-    else{document.body.style.fontFamily="'Roboto',sans-serif";if(!silent)state.activeFont=null;}
+    if(fontId){var f=fonts.find(function(x){return x.id===fontId;});document.body.style.fontFamily="'"+f.family+"',sans-serif";document.documentElement.style.setProperty('--font-scale',f.scale||1);if(!silent)state.activeFont=fontId;}
+    else{document.body.style.fontFamily="'Roboto',sans-serif";document.documentElement.style.setProperty('--font-scale',1);if(!silent)state.activeFont=null;}
 }
 
 function applyLogo(logoId){
